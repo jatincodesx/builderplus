@@ -7,18 +7,21 @@ export type BasemapConfig = {
   label: string;
   tileUrl: string;
   attribution: string;
-  maxZoom?: number;
+  minZoom: number;
+  maxZoom: number;
+  maxNativeZoom: number;
+  fallbackBasemapId?: BasemapId;
 };
 
 export const MAP_TILE_URL =
   process.env.NEXT_PUBLIC_MAP_TILE_URL ??
   process.env.NEXT_PUBLIC_TILE_URL ??
-  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 export const MAP_TILE_ATTRIBUTION =
   process.env.NEXT_PUBLIC_MAP_TILE_ATTRIBUTION ??
   process.env.NEXT_PUBLIC_TILE_ATTRIBUTION ??
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 export const SATELLITE_TILE_URL =
   process.env.NEXT_PUBLIC_SATELLITE_TILE_URL ??
@@ -34,14 +37,19 @@ export const BASEMAPS: BasemapConfig[] = [
     label: "Map",
     tileUrl: MAP_TILE_URL,
     attribution: MAP_TILE_ATTRIBUTION,
-    maxZoom: 20
+    minZoom: 0,
+    maxZoom: 22,
+    maxNativeZoom: 19
   },
   {
     id: "satellite",
     label: "Satellite",
     tileUrl: SATELLITE_TILE_URL,
     attribution: SATELLITE_TILE_ATTRIBUTION,
-    maxZoom: 19
+    minZoom: 0,
+    maxZoom: 22,
+    maxNativeZoom: 19,
+    fallbackBasemapId: "map"
   }
 ];
 
@@ -61,7 +69,7 @@ export const ACT_BBOX: BBox = [148.7628, -35.9205, 149.3993, -35.1245];
 
 export const MAP_ZOOM = {
   min: 4,
-  max: 20,
+  max: 22,
   suburb: 15,
   address: 17
 };

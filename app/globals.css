@@ -36,11 +36,19 @@ input {
 }
 
 .builderplus-tiles {
-  filter: saturate(0.85) contrast(1.0) brightness(1.06);
+  filter: saturate(0.88) brightness(1.04);
 }
 
 .builderplus-tiles-satellite {
-  filter: saturate(1.0) contrast(1.0) brightness(1.0);
+  filter: none;
+}
+
+.leaflet-tile-pane {
+  z-index: 200;
+}
+
+.leaflet-overlay-pane {
+  z-index: 400;
 }
 
 .leaflet-container {

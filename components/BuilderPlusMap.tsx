@@ -37,7 +37,7 @@ const maskStyle: PathOptions = {
   color: "#020617",
   weight: 0,
   fillColor: "#020617",
-  fillOpacity: 0.18,
+  fillOpacity: 0.15,
   fillRule: "evenodd",
   interactive: false
 };
@@ -50,6 +50,9 @@ const boundaryStyle: PathOptions = {
   fillOpacity: 0.04,
   interactive: false
 };
+
+const TILE_ERROR_THRESHOLD = 4;
+const TILE_ERROR_WINDOW_MS = 8000;
 
 export type BuilderPlusMapProps = {
   parcels: GeoFeatureCollection<ParcelProperties>;
@@ -196,17 +199,11 @@ export function BuilderPlusMap({
           manualOverride={manualBasemapOverride}
           onAutoBasemap={onBasemapChange}
         />
-        <TileLayer
+        <TileLayerWithFallback
           key={basemap.id}
-          url={basemap.tileUrl}
-          attribution={basemap.attribution}
-          maxZoom={basemap.maxZoom ?? MAP_ZOOM.max}
-          className={
-            basemap.id === "satellite"
-              ? "builderplus-tiles-satellite"
-              : "builderplus-tiles"
-          }
-          updateWhenIdle
+          basemap={basemap}
+          activeBasemap={activeBasemap}
+          onBasemapChange={onBasemapChange}
         />
         <GeoJSON
           data={outsideActMask as GeoJsonObject}
@@ -262,7 +259,76 @@ export function BuilderPlusMap({
       {tooltip && (
         <ParcelTooltip parcel={tooltip.parcel} x={tooltip.x} y={tooltip.y} />
       )}
+      {process.env.NODE_ENV !== "production" && (
+        <TileDiagnostics activeBasemap={activeBasemap} />
+      )}
     </div>
+  );
+}
+
+function TileLayerWithFallback({
+  basemap,
+  activeBasemap,
+  onBasemapChange
+}: {
+  basemap: typeof BASEMAPS[number];
+  activeBasemap: BasemapId;
+  onBasemapChange: (basemap: BasemapId) => void;
+}) {
+  const map = useMap();
+  const errorTimestampsRef = useRef<number[]>([]);
+  const fallbackTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    errorTimestampsRef.current = [];
+    fallbackTriggeredRef.current = false;
+  }, [activeBasemap]);
+
+  useEffect(() => {
+    const tileLayer = findTileLayer(map);
+    if (!tileLayer) return;
+
+    const onTileError = () => {
+      if (fallbackTriggeredRef.current) return;
+      if (!basemap.fallbackBasemapId) return;
+
+      const now = Date.now();
+      errorTimestampsRef.current.push(now);
+      errorTimestampsRef.current = errorTimestampsRef.current.filter(
+        (t) => now - t < TILE_ERROR_WINDOW_MS
+      );
+
+      if (errorTimestampsRef.current.length >= TILE_ERROR_THRESHOLD) {
+        fallbackTriggeredRef.current = true;
+        console.warn(
+          `[BuilderPlus] ${basemap.label} tiles failing — falling back to ${basemap.fallbackBasemapId}`
+        );
+        onBasemapChange(basemap.fallbackBasemapId);
+      }
+    };
+
+    tileLayer.on("tileerror", onTileError);
+    return () => {
+      tileLayer.off("tileerror", onTileError);
+    };
+  }, [map, basemap, onBasemapChange]);
+
+  return (
+    <TileLayer
+      url={basemap.tileUrl}
+      attribution={basemap.attribution}
+      minZoom={basemap.minZoom}
+      maxZoom={basemap.maxZoom}
+      maxNativeZoom={basemap.maxNativeZoom}
+      keepBuffer={6}
+      updateWhenIdle={false}
+      updateWhenZooming={true}
+      className={
+        basemap.id === "satellite"
+          ? "builderplus-tiles-satellite"
+          : "builderplus-tiles"
+      }
+    />
   );
 }
 
@@ -371,4 +437,58 @@ function registerParcelLayers(layer: LeafletGeoJSON, layerMap: Map<string, Path>
       layerMap.set(feature.properties.id, child);
     }
   });
+}
+
+function findTileLayer(map: L.Map): L.TileLayer | null {
+  const layers = (map as unknown as { _layers?: Record<string, L.Layer> })._layers;
+  if (!layers) return null;
+  for (const layer of Object.values(layers)) {
+    if (layer instanceof L.TileLayer) return layer;
+  }
+  return null;
+}
+
+function TileDiagnostics({ activeBasemap }: { activeBasemap: BasemapId }) {
+  const map = useMap();
+  const [stats, setStats] = useState({ loaded: 0, errors: 0, zoom: 0 });
+
+  useEffect(() => {
+    const updateZoom = () => setStats((s) => ({ ...s, zoom: map.getZoom() }));
+
+    const tileLayer = findTileLayer(map);
+    if (!tileLayer) {
+      updateZoom();
+      map.on("zoomend", updateZoom);
+      return () => { map.off("zoomend", updateZoom); };
+    }
+
+    const onLoad = () => setStats((s) => ({ ...s, loaded: s.loaded + 1 }));
+    const onError = () => setStats((s) => ({ ...s, errors: s.errors + 1 }));
+
+    tileLayer.on("tileload", onLoad);
+    tileLayer.on("tileerror", onError);
+    map.on("zoomend", updateZoom);
+    updateZoom();
+
+    const timer = setInterval(() => {
+      setStats((s) => ({ ...s, loaded: 0, errors: 0 }));
+    }, 10000);
+
+    return () => {
+      tileLayer.off("tileload", onLoad);
+      tileLayer.off("tileerror", onError);
+      map.off("zoomend", updateZoom);
+      clearInterval(timer);
+    };
+  }, [map, activeBasemap]);
+
+  return (
+    <div className="pointer-events-none absolute bottom-14 right-4 z-50 rounded-lg border border-white/10 bg-slate-950/80 px-3 py-2 text-[10px] text-slate-300 backdrop-blur-sm">
+      <div>Basemap: {activeBasemap} | Zoom: {stats.zoom}</div>
+      <div>Tiles: {stats.loaded} loaded / {stats.errors} errors</div>
+      {stats.errors > 0 && (
+        <div className="text-amber-300">Tile errors detected</div>
+      )}
+    </div>
+  );
 }
