@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LocateFixed, Loader2, MapPin, Search, XCircle } from "lucide-react";
+import {
+  LocateFixed,
+  Loader2,
+  MapPin,
+  PencilRuler,
+  Search,
+  XCircle
+} from "lucide-react";
 import { ACTOnlyNotice } from "@/components/ACTOnlyNotice";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
@@ -29,12 +36,16 @@ export function SearchPanel({
   activeLabel,
   selected,
   loadingParcels,
+  manualDrawActive,
+  onStartManualPlot,
   onSelectResult
 }: {
   variant: "landing" | "map";
   activeLabel?: string;
   selected: boolean;
   loadingParcels: boolean;
+  manualDrawActive: boolean;
+  onStartManualPlot: () => void;
   onSelectResult: (result: SearchResult) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -271,19 +282,38 @@ export function SearchPanel({
                 <Skeleton className="h-3 w-56" />
               </div>
             )}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">
+                Missing block?
+              </p>
+              <Button
+                type="button"
+                variant={manualDrawActive ? "default" : "secondary"}
+                className="mt-3 w-full"
+                onClick={onStartManualPlot}
+              >
+                <PencilRuler className="h-4 w-4" />
+                Draw plot manually
+              </Button>
+            </div>
           </>
         )}
 
         <div className="flex items-center justify-between gap-3">
           <ACTOnlyNotice compact={compact} />
           {!compact && (
-            <Button
-              variant="secondary"
-              onClick={() => selectQuickSuburb("Denman Prospect")}
-              className="hidden shrink-0 sm:inline-flex"
-            >
-              Explore ACT
-            </Button>
+            <div className="hidden shrink-0 gap-2 sm:flex">
+              <Button variant="secondary" onClick={onStartManualPlot}>
+                <PencilRuler className="h-4 w-4" />
+                Draw plot manually
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => selectQuickSuburb("Denman Prospect")}
+              >
+                Explore ACT
+              </Button>
+            </div>
           )}
         </div>
       </div>

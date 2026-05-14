@@ -1,12 +1,48 @@
 import type { BBox } from "@/types/geo";
 
-export const TILE_URL =
+export type BasemapId = "map" | "satellite";
+
+export type BasemapConfig = {
+  id: BasemapId;
+  label: string;
+  tileUrl: string;
+  attribution: string;
+};
+
+export const MAP_TILE_URL =
+  process.env.NEXT_PUBLIC_MAP_TILE_URL ??
   process.env.NEXT_PUBLIC_TILE_URL ??
   "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
 
-export const TILE_ATTRIBUTION =
+export const MAP_TILE_ATTRIBUTION =
+  process.env.NEXT_PUBLIC_MAP_TILE_ATTRIBUTION ??
   process.env.NEXT_PUBLIC_TILE_ATTRIBUTION ??
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+export const SATELLITE_TILE_URL =
+  process.env.NEXT_PUBLIC_SATELLITE_TILE_URL ??
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+
+export const SATELLITE_TILE_ATTRIBUTION =
+  process.env.NEXT_PUBLIC_SATELLITE_TILE_ATTRIBUTION ??
+  "Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community";
+
+export const BASEMAPS: BasemapConfig[] = [
+  {
+    id: "map",
+    label: "Map",
+    tileUrl: MAP_TILE_URL,
+    attribution: MAP_TILE_ATTRIBUTION
+  },
+  {
+    id: "satellite",
+    label: "Satellite",
+    tileUrl: SATELLITE_TILE_URL,
+    attribution: SATELLITE_TILE_ATTRIBUTION
+  }
+];
+
+export const AUTO_SATELLITE_ZOOM = 17;
 
 export const AUSTRALIA_VIEW = {
   center: [-25.7, 134.6] as [number, number],
@@ -55,6 +91,14 @@ export const PARCEL_STYLES = {
     opacity: 1,
     fillColor: "#0EA5E9",
     fillOpacity: 0.32
+  },
+  manual: {
+    color: "#FBBF24",
+    weight: 3,
+    opacity: 1,
+    dashArray: "8 7",
+    fillColor: "#22D3EE",
+    fillOpacity: 0.12
   }
 };
 

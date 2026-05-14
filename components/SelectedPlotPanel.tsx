@@ -2,23 +2,29 @@
 
 import { Bookmark, Compass, ExternalLink, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
+import { FloorPlanUploadButton } from "@/components/FloorPlanUploadButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { featureCentroid, formatCoordinate } from "@/lib/geometry";
 import { cn } from "@/lib/utils";
+import type { FloorPlanUploadPayload } from "@/types/floorPlan";
 import type { ParcelFeature } from "@/types/parcel";
 
 export function SelectedPlotPanel({
   parcel,
+  onUploadFloorPlan,
   onClear
 }: {
   parcel: ParcelFeature;
+  onUploadFloorPlan: (payload: FloorPlanUploadPayload) => void;
   onClear: () => void;
 }) {
   const centroid = featureCentroid(parcel);
   const sourceLabel =
     parcel.properties.source === "ACTmapi"
       ? "ACTmapi live data"
+      : parcel.properties.source === "User drawn"
+        ? "User drawn"
       : "Development fallback data";
   const address =
     parcel.properties.address ||
@@ -35,7 +41,7 @@ export function SelectedPlotPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 28 }}
       transition={{ duration: 0.22 }}
-      className="glass-panel absolute right-4 top-4 z-20 flex max-h-[calc(100vh-2rem)] w-[390px] flex-col rounded-2xl p-5 max-lg:bottom-4 max-lg:top-auto max-lg:w-[calc(100%-2rem)]"
+      className="glass-panel subtle-scrollbar absolute right-4 top-4 z-20 flex max-h-[calc(100vh-2rem)] w-[390px] flex-col overflow-y-auto rounded-2xl p-5 max-lg:bottom-4 max-lg:top-auto max-lg:w-[calc(100%-2rem)]"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -70,6 +76,18 @@ export function SelectedPlotPanel({
         />
       </div>
 
+      {parcel.properties.isManual && (
+        <div className="mt-5 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4">
+          <p className="text-sm font-semibold text-amber-50">
+            Approximate user-drawn plot
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-amber-50/80">
+            This is an approximate user-drawn plot and is not an official ACT
+            cadastral boundary.
+          </p>
+        </div>
+      )}
+
       <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.05] p-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">
           <Compass className="h-4 w-4 text-sky-300" />
@@ -79,6 +97,19 @@ export function SelectedPlotPanel({
           This is an early feasibility view. Final buildability depends on
           zoning, setbacks, easements, slope, estate rules and approvals.
         </p>
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.05] p-4">
+        <p className="text-sm font-semibold text-white">Floor plan overlay</p>
+        <p className="mt-1 text-xs leading-relaxed text-slate-400">
+          JPG/PNG only. Approximate visual placement only.
+        </p>
+        <div className="mt-3">
+          <FloorPlanUploadButton
+            anchorLatLng={centroid}
+            onUpload={onUploadFloorPlan}
+          />
+        </div>
       </div>
 
       <div className="mt-5 grid gap-3">

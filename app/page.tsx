@@ -1,11 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import { BuilderPlusMapDynamic as BuilderPlusMap } from "@/components/BuilderPlusMapDynamic";
 import { SearchPanel } from "@/components/SearchPanel";
 import { SelectedPlotPanel } from "@/components/SelectedPlotPanel";
+import type {
+  FloorPlanOverlayState,
+  FloorPlanUploadPayload
+} from "@/types/floorPlan";
+import type { ManualPlotFeature } from "@/types/manualPlot";
 import type { ParcelFeature, ParcelFeatureCollection } from "@/types/parcel";
 import type { SearchResult } from "@/types/search";
 
@@ -18,8 +23,19 @@ export default function Home() {
   const [activeLocation, setActiveLocation] = useState<SearchResult | null>(null);
   const [parcels, setParcels] = useState<ParcelFeatureCollection>(emptyParcels);
   const [selectedParcel, setSelectedParcel] = useState<ParcelFeature | null>(null);
+  const [floorPlanOverlay, setFloorPlanOverlay] =
+    useState<FloorPlanOverlayState | null>(null);
+  const [manualPlot, setManualPlot] = useState<ManualPlotFeature | null>(null);
+  const [manualDrawActive, setManualDrawActive] = useState(false);
   const [loadingParcels, setLoadingParcels] = useState(false);
   const [notice, setNotice] = useState("");
+  const floorPlanOverlayRef = useRef<FloorPlanOverlayState | null>(null);
+
+  useEffect(() => {
+    floorPlanOverlayRef.current = floorPlanOverlay;
+  }, [floorPlanOverlay]);
+
+  useEffect(() => () => revokeFloorPlanImage(floorPlanOverlayRef.current), []);
 
   const activeLabel = useMemo(() => {
     if (!activeLocation) return undefined;
@@ -57,6 +73,9 @@ export default function Home() {
     setActiveLocation(result);
     setLoadingParcels(true);
     setSelectedParcel(null);
+    setManualPlot(null);
+    setManualDrawActive(false);
+    removeFloorPlanOverlay();
 
     try {
       if (result.type === "suburb") {
@@ -163,20 +182,107 @@ export default function Home() {
     }
   }
 
+  function selectOfficialParcel(parcel: ParcelFeature) {
+    setManualPlot(null);
+    setManualDrawActive(false);
+    removeFloorPlanOverlay();
+    setSelectedParcel(parcel);
+  }
+
+  function handleFloorPlanUpload(payload: FloorPlanUploadPayload) {
+    setFloorPlanOverlay((current) => {
+      revokeFloorPlanImage(current);
+      return {
+        imageUrl: payload.imageUrl,
+        fileName: payload.fileName,
+        opacity: 0.72,
+        scale: 1,
+        rotation: 0,
+        offsetX: 0,
+        offsetY: 0,
+        anchorLatLng: {
+          lat: payload.anchorLatLng.lat,
+          lng: payload.anchorLatLng.lng
+        },
+        locked: false
+      };
+    });
+  }
+
+  function resetFloorPlanOverlay() {
+    setFloorPlanOverlay((current) =>
+      current
+        ? {
+            ...current,
+            opacity: 0.72,
+            scale: 1,
+            rotation: 0,
+            offsetX: 0,
+            offsetY: 0
+          }
+        : null
+    );
+  }
+
+  function removeFloorPlanOverlay() {
+    setFloorPlanOverlay((current) => {
+      revokeFloorPlanImage(current);
+      return null;
+    });
+  }
+
+  function startManualPlotDraw() {
+    setNotice("");
+    setManualDrawActive(true);
+    setSelectedParcel(null);
+    removeFloorPlanOverlay();
+  }
+
+  function confirmManualPlot(plot: ManualPlotFeature) {
+    setManualPlot(plot);
+    setSelectedParcel(plot);
+    setManualDrawActive(false);
+    removeFloorPlanOverlay();
+  }
+
+  function clearSelectedParcel() {
+    if (selectedParcel?.properties.isManual) {
+      setManualPlot(null);
+    }
+    setSelectedParcel(null);
+    removeFloorPlanOverlay();
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <BuilderPlusMap
         parcels={parcels}
         activeLocation={activeLocation}
         selectedParcel={selectedParcel}
-        onSelectParcel={setSelectedParcel}
+        floorPlanOverlay={floorPlanOverlay}
+        manualPlot={manualPlot}
+        manualDrawActive={manualDrawActive}
+        onSelectParcel={(parcel) => {
+          if (parcel.properties.isManual) {
+            setSelectedParcel(parcel);
+            return;
+          }
+          selectOfficialParcel(parcel);
+        }}
+        onChangeFloorPlanOverlay={setFloorPlanOverlay}
+        onResetFloorPlanOverlay={resetFloorPlanOverlay}
+        onRemoveFloorPlanOverlay={removeFloorPlanOverlay}
+        onConfirmManualPlot={confirmManualPlot}
+        onCancelManualPlotDraw={() => setManualDrawActive(false)}
       />
 
       <SearchPanel
-        variant={activeLocation ? "map" : "landing"}
+        variant={activeLocation || manualDrawActive ? "map" : "landing"}
         activeLabel={activeLabel}
         selected={Boolean(selectedParcel)}
         loadingParcels={loadingParcels}
+        manualDrawActive={manualDrawActive}
+        onStartManualPlot={startManualPlotDraw}
         onSelectResult={handleSelectResult}
       />
 
@@ -185,7 +291,8 @@ export default function Home() {
           <SelectedPlotPanel
             key={selectedParcel.properties.id}
             parcel={selectedParcel}
-            onClear={() => setSelectedParcel(null)}
+            onUploadFloorPlan={handleFloorPlanUpload}
+            onClear={clearSelectedParcel}
           />
         )}
       </AnimatePresence>
@@ -212,4 +319,10 @@ export default function Home() {
       )}
     </main>
   );
+}
+
+function revokeFloorPlanImage(overlay: FloorPlanOverlayState | null) {
+  if (overlay?.imageUrl.startsWith("blob:")) {
+    URL.revokeObjectURL(overlay.imageUrl);
+  }
 }

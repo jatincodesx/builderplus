@@ -36,7 +36,11 @@ input {
 }
 
 .builderplus-tiles {
-  filter: saturate(0.65) contrast(0.9) brightness(0.86);
+  filter: saturate(0.72) contrast(0.96) brightness(1.02);
+}
+
+.builderplus-tiles-satellite {
+  filter: saturate(0.92) contrast(1.02) brightness(0.98);
 }
 
 .leaflet-container {

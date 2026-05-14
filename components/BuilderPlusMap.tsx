@@ -10,19 +10,26 @@ import L, {
   type PathOptions
 } from "leaflet";
 import type { GeoJsonObject } from "geojson";
+import { BasemapToggle } from "@/components/BasemapToggle";
+import { FloorPlanControls } from "@/components/FloorPlanControls";
+import { FloorPlanOverlay } from "@/components/FloorPlanOverlay";
+import { ManualPlotDrawControl } from "@/components/ManualPlotDrawControl";
 import { ParcelTooltip } from "@/components/ParcelTooltip";
 import {
   ACT_BBOX,
   ACT_VIEW,
+  AUTO_SATELLITE_ZOOM,
   AUSTRALIA_VIEW,
+  BASEMAPS,
+  type BasemapId,
   MAP_ZOOM,
-  PARCEL_STYLES,
-  TILE_ATTRIBUTION,
-  TILE_URL
+  PARCEL_STYLES
 } from "@/lib/mapConfig";
 import { actBoundary, outsideActMask } from "@/lib/geojson";
 import { featureBbox } from "@/lib/geometry";
+import type { FloorPlanOverlayState } from "@/types/floorPlan";
 import type { GeoFeatureCollection } from "@/types/geo";
+import type { ManualPlotFeature } from "@/types/manualPlot";
 import type { ParcelFeature, ParcelProperties } from "@/types/parcel";
 import type { SearchResult } from "@/types/search";
 
@@ -50,18 +57,37 @@ export type BuilderPlusMapProps = {
   parcels: GeoFeatureCollection<ParcelProperties>;
   activeLocation: SearchResult | null;
   selectedParcel: ParcelFeature | null;
+  floorPlanOverlay: FloorPlanOverlayState | null;
+  manualPlot: ManualPlotFeature | null;
+  manualDrawActive: boolean;
   onSelectParcel: (parcel: ParcelFeature) => void;
+  onChangeFloorPlanOverlay: (overlay: FloorPlanOverlayState) => void;
+  onResetFloorPlanOverlay: () => void;
+  onRemoveFloorPlanOverlay: () => void;
+  onConfirmManualPlot: (plot: ManualPlotFeature) => void;
+  onCancelManualPlotDraw: () => void;
 };
 
 export function BuilderPlusMap({
   parcels,
   activeLocation,
   selectedParcel,
-  onSelectParcel
+  floorPlanOverlay,
+  manualPlot,
+  manualDrawActive,
+  onSelectParcel,
+  onChangeFloorPlanOverlay,
+  onResetFloorPlanOverlay,
+  onRemoveFloorPlanOverlay,
+  onConfirmManualPlot,
+  onCancelManualPlotDraw
 }: BuilderPlusMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const layerRefs = useRef(new Map<string, Path>());
   const selectedIdRef = useRef<string | null>(null);
+  const [activeBasemap, setActiveBasemap] = useState<BasemapId>("map");
+  const [autoSatellite, setAutoSatellite] = useState(true);
+  const [manualBasemapOverride, setManualBasemapOverride] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{
     parcel: ParcelFeature;
@@ -134,14 +160,23 @@ export function BuilderPlusMap({
           layer.setStyle(getParcelStyle(id, null, selectedIdRef.current));
         },
         click: () => {
+          if (manualDrawActive) return;
           if (parcel.properties.selectable === true) {
             onSelectParcel(parcel);
           }
         }
       });
     },
-    [hoveredId, onSelectParcel, setMapCursor]
+    [hoveredId, manualDrawActive, onSelectParcel, setMapCursor]
   );
+
+  const basemap =
+    BASEMAPS.find((item) => item.id === activeBasemap) ?? BASEMAPS[0];
+
+  function selectBasemap(nextBasemap: BasemapId) {
+    setActiveBasemap(nextBasemap);
+    setManualBasemapOverride(true);
+  }
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#050B18]">
@@ -160,10 +195,20 @@ export function BuilderPlusMap({
         preferCanvas
       >
         <MapViewport activeLocation={activeLocation} />
+        <BasemapZoomController
+          autoSatellite={autoSatellite}
+          manualOverride={manualBasemapOverride}
+          onAutoBasemap={setActiveBasemap}
+        />
         <TileLayer
-          url={TILE_URL}
-          attribution={TILE_ATTRIBUTION}
-          className="builderplus-tiles"
+          key={basemap.id}
+          url={basemap.tileUrl}
+          attribution={basemap.attribution}
+          className={
+            basemap.id === "satellite"
+              ? "builderplus-tiles-satellite"
+              : "builderplus-tiles"
+          }
           updateWhenIdle
         />
         <GeoJSON
@@ -198,16 +243,82 @@ export function BuilderPlusMap({
           }
           onEachFeature={onEachParcel}
         />
+        <ManualPlotDrawControl
+          active={manualDrawActive}
+          manualPlot={manualPlot}
+          division={
+            activeLocation?.type === "suburb"
+              ? activeLocation.name
+              : activeLocation?.division
+          }
+          onConfirm={onConfirmManualPlot}
+          onCancel={onCancelManualPlotDraw}
+          onSelectManualPlot={onSelectParcel}
+        />
+        {floorPlanOverlay && (
+          <FloorPlanOverlay
+            overlay={floorPlanOverlay}
+            onChange={onChangeFloorPlanOverlay}
+          />
+        )}
       </MapContainer>
+      <BasemapToggle
+        activeBasemap={activeBasemap}
+        autoSatellite={autoSatellite}
+        manualOverride={manualBasemapOverride}
+        onChange={selectBasemap}
+        onToggleAutoSatellite={() => {
+          setAutoSatellite((value) => !value);
+          setManualBasemapOverride(false);
+        }}
+      />
       <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(5,11,24,0.18),transparent_36%,rgba(5,11,24,0.08))]" />
       <div className="pointer-events-none absolute bottom-6 left-1/2 z-20 -translate-x-1/2 rounded-full border border-sky-300/20 bg-slate-950/70 px-4 py-2 text-xs font-medium text-sky-50 shadow-glass backdrop-blur-xl">
         Currently available for ACT blocks only
       </div>
+      {floorPlanOverlay && (
+        <FloorPlanControls
+          overlay={floorPlanOverlay}
+          onChange={onChangeFloorPlanOverlay}
+          onReset={onResetFloorPlanOverlay}
+          onRemove={onRemoveFloorPlanOverlay}
+        />
+      )}
       {tooltip && (
         <ParcelTooltip parcel={tooltip.parcel} x={tooltip.x} y={tooltip.y} />
       )}
     </div>
   );
+}
+
+function BasemapZoomController({
+  autoSatellite,
+  manualOverride,
+  onAutoBasemap
+}: {
+  autoSatellite: boolean;
+  manualOverride: boolean;
+  onAutoBasemap: (basemap: BasemapId) => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!autoSatellite || manualOverride) return;
+
+    const updateBasemap = () => {
+      onAutoBasemap(
+        map.getZoom() >= AUTO_SATELLITE_ZOOM ? "satellite" : "map"
+      );
+    };
+
+    updateBasemap();
+    map.on("zoomend", updateBasemap);
+    return () => {
+      map.off("zoomend", updateBasemap);
+    };
+  }, [autoSatellite, manualOverride, map, onAutoBasemap]);
+
+  return null;
 }
 
 function MapViewport({ activeLocation }: { activeLocation: SearchResult | null }) {

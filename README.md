@@ -25,15 +25,18 @@ BuilderPlus is a production-quality MVP foundation for selecting ACT residential
 4. Open [http://localhost:3000](http://localhost:3000).
 
 BuilderPlus uses Leaflet + React Leaflet, so no Mapbox token is required.
-For development it uses OSM-compatible public tiles by default. Do not bulk
-download tiles, prefetch large areas, or otherwise abuse public OpenStreetMap
-tile infrastructure. Production can switch to CARTO, Stadia, MapTiler,
-Protomaps, or self-hosted tiles by changing `lib/mapConfig.ts` or these
-optional environment variables:
+For development it uses configurable OSM-compatible map tiles plus an optional
+satellite basemap. Close zoom levels can auto-switch to satellite so block-scale
+work is easier to read. Do not bulk download tiles, prefetch large areas, or
+otherwise abuse public tile infrastructure. Production can switch to CARTO,
+Stadia, MapTiler, Protomaps, or self-hosted tiles by changing
+`lib/mapConfig.ts` or these optional environment variables:
 
 ```bash
-NEXT_PUBLIC_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
-NEXT_PUBLIC_TILE_ATTRIBUTION=© OpenStreetMap contributors
+NEXT_PUBLIC_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+NEXT_PUBLIC_MAP_TILE_ATTRIBUTION=© OpenStreetMap contributors
+NEXT_PUBLIC_SATELLITE_TILE_URL=https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}
+NEXT_PUBLIC_SATELLITE_TILE_ATTRIBUTION=Tiles © Esri, Maxar, Earthstar Geographics, and the GIS User Community
 ```
 
 ## ACTmapi Configuration
@@ -68,6 +71,19 @@ The app includes clearly labelled mock ACT suburb, address and parcel data in `l
 
 In non-production mode, the app shows the specific fallback reason when fallback parcel data is active.
 
+## Plot Tools
+
+Selected blocks support an approximate floor plan overlay. Upload a JPG or PNG
+from the selected plot panel, then drag, scale, rotate, adjust opacity, reset,
+lock or remove it with the floating overlay controls. The overlay is visual only
+and is not surveyed or approval-ready.
+
+If ACTmapi does not return a block, use **Draw plot manually** from the search
+panel. Click four corners on the map, drag corner markers to refine the outline,
+then confirm the user-drawn plot. Manual plots are labelled as user drawn, shown
+with a dashed amber/cyan outline, and calculate an approximate area in square
+metres. They are not official ACT cadastral boundaries.
+
 ## Structure
 
 ```text
@@ -81,7 +97,12 @@ app/
     parcels/by-bbox/route.ts
   page.tsx
 components/
+  BasemapToggle.tsx
   BuilderPlusMap.tsx
+  FloorPlanControls.tsx
+  FloorPlanOverlay.tsx
+  FloorPlanUploadButton.tsx
+  ManualPlotDrawControl.tsx
   SearchPanel.tsx
   SelectedPlotPanel.tsx
   ParcelTooltip.tsx
@@ -94,11 +115,16 @@ lib/
   mockData.ts
   geometry.ts
 types/
+  floorPlan.ts
   geo.ts
+  manualPlot.ts
   parcel.ts
   search.ts
 ```
 
 ## Current Scope
 
-This MVP implements the plot search/select foundation only. House design fitting, zoning checks, setbacks, overlays, saved projects and enquiry flows are intentionally out of scope for this iteration.
+This MVP implements the plot search/select foundation, basemap switching,
+approximate image overlays and a manual four-point plot fallback. Zoning checks,
+setbacks, surveyed placement, saved projects and enquiry flows are intentionally
+out of scope for this iteration.
