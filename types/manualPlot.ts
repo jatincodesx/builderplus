@@ -1,3 +1,4 @@
+import type { LngLat } from "@/types/geo";
 import type { ParcelFeature } from "@/types/parcel";
 
 export type ManualPlotFeature = ParcelFeature & {
@@ -5,6 +6,7 @@ export type ManualPlotFeature = ParcelFeature & {
     source: "User drawn";
     classification: "manual-plot";
     isManual: true;
+    centroid?: LngLat;
   };
 };
 

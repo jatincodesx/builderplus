@@ -51,7 +51,7 @@ export function FloorPlanOverlay({
         transformOrigin: "center"
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- Blob-backed map overlays need direct pointer capture and transform control. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={overlay.imageUrl}
         alt=""

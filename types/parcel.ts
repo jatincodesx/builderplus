@@ -1,4 +1,4 @@
-import type { GeoFeature, GeoFeatureCollection } from "@/types/geo";
+import type { GeoFeature, GeoFeatureCollection, LngLat } from "@/types/geo";
 
 export type ParcelSource = "ACTmapi" | "mock" | "User drawn";
 
@@ -27,6 +27,7 @@ export type ParcelProperties = {
   rawProperties?: Record<string, unknown>;
   fallbackReason?: string;
   isManual?: boolean;
+  centroid?: LngLat;
 };
 
 export type ParcelFeature = GeoFeature<ParcelProperties>;

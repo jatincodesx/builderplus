@@ -32,15 +32,15 @@ input {
 }
 
 .builderplus-leaflet-map {
-  background: #050b18;
+  background: #0a1628;
 }
 
 .builderplus-tiles {
-  filter: saturate(0.72) contrast(0.96) brightness(1.02);
+  filter: saturate(0.85) contrast(1.0) brightness(1.06);
 }
 
 .builderplus-tiles-satellite {
-  filter: saturate(0.92) contrast(1.02) brightness(0.98);
+  filter: saturate(1.0) contrast(1.0) brightness(1.0);
 }
 
 .leaflet-container {
@@ -55,6 +55,10 @@ input {
 
 .leaflet-control-container .leaflet-left {
   left: 1rem;
+}
+
+.leaflet-control-container .leaflet-right {
+  right: 1rem;
 }
 
 .leaflet-control-zoom {

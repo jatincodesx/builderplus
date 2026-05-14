@@ -10,8 +10,6 @@ import L, {
   type PathOptions
 } from "leaflet";
 import type { GeoJsonObject } from "geojson";
-import { BasemapToggle } from "@/components/BasemapToggle";
-import { FloorPlanControls } from "@/components/FloorPlanControls";
 import { FloorPlanOverlay } from "@/components/FloorPlanOverlay";
 import { ManualPlotDrawControl } from "@/components/ManualPlotDrawControl";
 import { ParcelTooltip } from "@/components/ParcelTooltip";
@@ -39,7 +37,7 @@ const maskStyle: PathOptions = {
   color: "#020617",
   weight: 0,
   fillColor: "#020617",
-  fillOpacity: 0.28,
+  fillOpacity: 0.18,
   fillRule: "evenodd",
   interactive: false
 };
@@ -49,7 +47,7 @@ const boundaryStyle: PathOptions = {
   weight: 2.4,
   opacity: 0.9,
   fillColor: "#0B63CE",
-  fillOpacity: 0.05,
+  fillOpacity: 0.04,
   interactive: false
 };
 
@@ -62,10 +60,13 @@ export type BuilderPlusMapProps = {
   manualDrawActive: boolean;
   onSelectParcel: (parcel: ParcelFeature) => void;
   onChangeFloorPlanOverlay: (overlay: FloorPlanOverlayState) => void;
-  onResetFloorPlanOverlay: () => void;
-  onRemoveFloorPlanOverlay: () => void;
   onConfirmManualPlot: (plot: ManualPlotFeature) => void;
   onCancelManualPlotDraw: () => void;
+  activeBasemap: BasemapId;
+  autoSatellite: boolean;
+  manualBasemapOverride: boolean;
+  onBasemapChange: (basemap: BasemapId) => void;
+  sidebarWidth: number;
 };
 
 export function BuilderPlusMap({
@@ -77,17 +78,17 @@ export function BuilderPlusMap({
   manualDrawActive,
   onSelectParcel,
   onChangeFloorPlanOverlay,
-  onResetFloorPlanOverlay,
-  onRemoveFloorPlanOverlay,
   onConfirmManualPlot,
-  onCancelManualPlotDraw
+  onCancelManualPlotDraw,
+  activeBasemap,
+  autoSatellite,
+  manualBasemapOverride,
+  onBasemapChange,
+  sidebarWidth
 }: BuilderPlusMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const layerRefs = useRef(new Map<string, Path>());
   const selectedIdRef = useRef<string | null>(null);
-  const [activeBasemap, setActiveBasemap] = useState<BasemapId>("map");
-  const [autoSatellite, setAutoSatellite] = useState(true);
-  const [manualBasemapOverride, setManualBasemapOverride] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{
     parcel: ParcelFeature;
@@ -173,13 +174,8 @@ export function BuilderPlusMap({
   const basemap =
     BASEMAPS.find((item) => item.id === activeBasemap) ?? BASEMAPS[0];
 
-  function selectBasemap(nextBasemap: BasemapId) {
-    setActiveBasemap(nextBasemap);
-    setManualBasemapOverride(true);
-  }
-
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#050B18]">
+    <div className="absolute inset-0 overflow-hidden bg-[#0a1628]" style={{ left: sidebarWidth }}>
       <MapContainer
         ref={mapRef}
         center={AUSTRALIA_VIEW.center}
@@ -198,12 +194,13 @@ export function BuilderPlusMap({
         <BasemapZoomController
           autoSatellite={autoSatellite}
           manualOverride={manualBasemapOverride}
-          onAutoBasemap={setActiveBasemap}
+          onAutoBasemap={onBasemapChange}
         />
         <TileLayer
           key={basemap.id}
           url={basemap.tileUrl}
           attribution={basemap.attribution}
+          maxZoom={basemap.maxZoom ?? MAP_ZOOM.max}
           className={
             basemap.id === "satellite"
               ? "builderplus-tiles-satellite"
@@ -262,28 +259,6 @@ export function BuilderPlusMap({
           />
         )}
       </MapContainer>
-      <BasemapToggle
-        activeBasemap={activeBasemap}
-        autoSatellite={autoSatellite}
-        manualOverride={manualBasemapOverride}
-        onChange={selectBasemap}
-        onToggleAutoSatellite={() => {
-          setAutoSatellite((value) => !value);
-          setManualBasemapOverride(false);
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(5,11,24,0.18),transparent_36%,rgba(5,11,24,0.08))]" />
-      <div className="pointer-events-none absolute bottom-6 left-1/2 z-20 -translate-x-1/2 rounded-full border border-sky-300/20 bg-slate-950/70 px-4 py-2 text-xs font-medium text-sky-50 shadow-glass backdrop-blur-xl">
-        Currently available for ACT blocks only
-      </div>
-      {floorPlanOverlay && (
-        <FloorPlanControls
-          overlay={floorPlanOverlay}
-          onChange={onChangeFloorPlanOverlay}
-          onReset={onResetFloorPlanOverlay}
-          onRemove={onRemoveFloorPlanOverlay}
-        />
-      )}
       {tooltip && (
         <ParcelTooltip parcel={tooltip.parcel} x={tooltip.x} y={tooltip.y} />
       )}

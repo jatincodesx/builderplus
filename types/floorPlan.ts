@@ -1,8 +1,9 @@
 import type { LngLat } from "@/types/geo";
+import type { DesignPlacementMode } from "@/types/design";
 
 export type FloorPlanOverlayState = {
   imageUrl: string;
-  fileName: string;
+  fileName?: string;
   opacity: number;
   scale: number;
   rotation: number;
@@ -13,6 +14,11 @@ export type FloorPlanOverlayState = {
     lng: number;
   };
   locked: boolean;
+  designId?: string;
+  widthM?: number;
+  depthM?: number;
+  floorAreaSqm?: number;
+  placementMode: DesignPlacementMode;
 };
 
 export type FloorPlanUploadPayload = {

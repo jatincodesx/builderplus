@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import { BuilderPlusMapDynamic as BuilderPlusMap } from "@/components/BuilderPlusMapDynamic";
-import { SearchPanel } from "@/components/SearchPanel";
+import { BuilderPlusSidebar, SIDEBAR_WIDTH } from "@/components/BuilderPlusSidebar";
 import { SelectedPlotPanel } from "@/components/SelectedPlotPanel";
 import type {
   FloorPlanOverlayState,
@@ -13,6 +13,7 @@ import type {
 import type { ManualPlotFeature } from "@/types/manualPlot";
 import type { ParcelFeature, ParcelFeatureCollection } from "@/types/parcel";
 import type { SearchResult } from "@/types/search";
+import type { BasemapId } from "@/lib/mapConfig";
 
 const emptyParcels: ParcelFeatureCollection = {
   type: "FeatureCollection",
@@ -29,6 +30,9 @@ export default function Home() {
   const [manualDrawActive, setManualDrawActive] = useState(false);
   const [loadingParcels, setLoadingParcels] = useState(false);
   const [notice, setNotice] = useState("");
+  const [activeBasemap, setActiveBasemap] = useState<BasemapId>("map");
+  const [autoSatellite, setAutoSatellite] = useState(true);
+  const [manualBasemapOverride, setManualBasemapOverride] = useState(false);
   const floorPlanOverlayRef = useRef<FloorPlanOverlayState | null>(null);
 
   useEffect(() => {
@@ -204,7 +208,8 @@ export default function Home() {
           lat: payload.anchorLatLng.lat,
           lng: payload.anchorLatLng.lng
         },
-        locked: false
+        locked: false,
+        placementMode: "uploaded-image"
       };
     });
   }
@@ -231,6 +236,35 @@ export default function Home() {
     });
   }
 
+  function fitFloorPlanToPlot() {
+    if (!floorPlanOverlay || !selectedParcel) return;
+
+    const centroid = featureCentroidSimple(selectedParcel);
+    if (!centroid) return;
+
+    setFloorPlanOverlay((current) => {
+      if (!current) return null;
+      return {
+        ...current,
+        anchorLatLng: { lat: centroid.lat, lng: centroid.lng },
+        offsetX: 0,
+        offsetY: 0,
+        rotation: 0,
+        scale: estimateFitScale(selectedParcel)
+      };
+    });
+  }
+
+  function selectBasemap(nextBasemap: BasemapId) {
+    setActiveBasemap(nextBasemap);
+    setManualBasemapOverride(true);
+  }
+
+  function toggleAutoSatellite() {
+    setAutoSatellite((value) => !value);
+    setManualBasemapOverride(false);
+  }
+
   function startManualPlotDraw() {
     setNotice("");
     setManualDrawActive(true);
@@ -255,6 +289,27 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
+      <BuilderPlusSidebar
+        activeLocation={activeLocation}
+        activeLabel={activeLabel}
+        selectedParcel={selectedParcel}
+        loadingParcels={loadingParcels}
+        manualDrawActive={manualDrawActive}
+        floorPlanOverlay={floorPlanOverlay}
+        activeBasemap={activeBasemap}
+        autoSatellite={autoSatellite}
+        manualBasemapOverride={manualBasemapOverride}
+        onStartManualPlot={startManualPlotDraw}
+        onSelectResult={handleSelectResult}
+        onUploadFloorPlan={handleFloorPlanUpload}
+        onChangeFloorPlanOverlay={setFloorPlanOverlay}
+        onResetFloorPlanOverlay={resetFloorPlanOverlay}
+        onRemoveFloorPlanOverlay={removeFloorPlanOverlay}
+        onFitFloorPlanToPlot={fitFloorPlanToPlot}
+        onBasemapChange={selectBasemap}
+        onAutoSatelliteToggle={toggleAutoSatellite}
+      />
+
       <BuilderPlusMap
         parcels={parcels}
         activeLocation={activeLocation}
@@ -270,20 +325,13 @@ export default function Home() {
           selectOfficialParcel(parcel);
         }}
         onChangeFloorPlanOverlay={setFloorPlanOverlay}
-        onResetFloorPlanOverlay={resetFloorPlanOverlay}
-        onRemoveFloorPlanOverlay={removeFloorPlanOverlay}
         onConfirmManualPlot={confirmManualPlot}
         onCancelManualPlotDraw={() => setManualDrawActive(false)}
-      />
-
-      <SearchPanel
-        variant={activeLocation || manualDrawActive ? "map" : "landing"}
-        activeLabel={activeLabel}
-        selected={Boolean(selectedParcel)}
-        loadingParcels={loadingParcels}
-        manualDrawActive={manualDrawActive}
-        onStartManualPlot={startManualPlotDraw}
-        onSelectResult={handleSelectResult}
+        activeBasemap={activeBasemap}
+        autoSatellite={autoSatellite}
+        manualBasemapOverride={manualBasemapOverride}
+        onBasemapChange={selectBasemap}
+        sidebarWidth={SIDEBAR_WIDTH}
       />
 
       <AnimatePresence>
@@ -291,7 +339,6 @@ export default function Home() {
           <SelectedPlotPanel
             key={selectedParcel.properties.id}
             parcel={selectedParcel}
-            onUploadFloorPlan={handleFloorPlanUpload}
             onClear={clearSelectedParcel}
           />
         )}
@@ -304,6 +351,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             className="glass-panel absolute bottom-4 left-4 z-20 max-w-sm rounded-2xl p-4 text-sm text-slate-200"
+            style={{ left: SIDEBAR_WIDTH + 16 }}
           >
             {notice}
           </motion.div>
@@ -325,4 +373,34 @@ function revokeFloorPlanImage(overlay: FloorPlanOverlayState | null) {
   if (overlay?.imageUrl.startsWith("blob:")) {
     URL.revokeObjectURL(overlay.imageUrl);
   }
+}
+
+function featureCentroidSimple(feature: ParcelFeature): { lat: number; lng: number } | null {
+  if (feature.geometry.type === "Polygon") {
+    const coords = feature.geometry.coordinates[0];
+    if (coords && coords.length > 0) {
+      const sumLng = coords.reduce((s, c) => s + c[0], 0);
+      const sumLat = coords.reduce((s, c) => s + c[1], 0);
+      return { lng: sumLng / coords.length, lat: sumLat / coords.length };
+    }
+  }
+  if (feature.geometry.type === "MultiPolygon") {
+    const coords = feature.geometry.coordinates[0]?.[0];
+    if (coords && coords.length > 0) {
+      const sumLng = coords.reduce((s, c) => s + c[0], 0);
+      const sumLat = coords.reduce((s, c) => s + c[1], 0);
+      return { lng: sumLng / coords.length, lat: sumLat / coords.length };
+    }
+  }
+  return null;
+}
+
+function estimateFitScale(feature: ParcelFeature): number {
+  if (feature.properties.areaSqm != null && feature.properties.areaSqm > 0) {
+    const estimatedDim = Math.sqrt(feature.properties.areaSqm);
+    if (estimatedDim > 0 && estimatedDim < 200) return 1.0;
+    if (estimatedDim >= 200 && estimatedDim < 500) return 0.8;
+    if (estimatedDim >= 500) return 0.6;
+  }
+  return 1.0;
 }
