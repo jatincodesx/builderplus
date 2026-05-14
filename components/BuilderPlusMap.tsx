@@ -10,8 +10,6 @@ import L, {
   type PathOptions
 } from "leaflet";
 import type { GeoJsonObject } from "geojson";
-import { BasemapToggle } from "@/components/BasemapToggle";
-import { FloorPlanControls } from "@/components/FloorPlanControls";
 import { FloorPlanOverlay } from "@/components/FloorPlanOverlay";
 import { ManualPlotDrawControl } from "@/components/ManualPlotDrawControl";
 import { ParcelTooltip } from "@/components/ParcelTooltip";
@@ -39,7 +37,7 @@ const maskStyle: PathOptions = {
   color: "#020617",
   weight: 0,
   fillColor: "#020617",
-  fillOpacity: 0.28,
+  fillOpacity: 0.15,
   fillRule: "evenodd",
   interactive: false
 };
@@ -49,9 +47,12 @@ const boundaryStyle: PathOptions = {
   weight: 2.4,
   opacity: 0.9,
   fillColor: "#0B63CE",
-  fillOpacity: 0.05,
+  fillOpacity: 0.04,
   interactive: false
 };
+
+const TILE_ERROR_THRESHOLD = 4;
+const TILE_ERROR_WINDOW_MS = 8000;
 
 export type BuilderPlusMapProps = {
   parcels: GeoFeatureCollection<ParcelProperties>;
@@ -62,10 +63,13 @@ export type BuilderPlusMapProps = {
   manualDrawActive: boolean;
   onSelectParcel: (parcel: ParcelFeature) => void;
   onChangeFloorPlanOverlay: (overlay: FloorPlanOverlayState) => void;
-  onResetFloorPlanOverlay: () => void;
-  onRemoveFloorPlanOverlay: () => void;
   onConfirmManualPlot: (plot: ManualPlotFeature) => void;
   onCancelManualPlotDraw: () => void;
+  activeBasemap: BasemapId;
+  autoSatellite: boolean;
+  manualBasemapOverride: boolean;
+  onBasemapChange: (basemap: BasemapId) => void;
+  sidebarWidth: number;
 };
 
 export function BuilderPlusMap({
@@ -77,17 +81,17 @@ export function BuilderPlusMap({
   manualDrawActive,
   onSelectParcel,
   onChangeFloorPlanOverlay,
-  onResetFloorPlanOverlay,
-  onRemoveFloorPlanOverlay,
   onConfirmManualPlot,
-  onCancelManualPlotDraw
+  onCancelManualPlotDraw,
+  activeBasemap,
+  autoSatellite,
+  manualBasemapOverride,
+  onBasemapChange,
+  sidebarWidth
 }: BuilderPlusMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const layerRefs = useRef(new Map<string, Path>());
   const selectedIdRef = useRef<string | null>(null);
-  const [activeBasemap, setActiveBasemap] = useState<BasemapId>("map");
-  const [autoSatellite, setAutoSatellite] = useState(true);
-  const [manualBasemapOverride, setManualBasemapOverride] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{
     parcel: ParcelFeature;
@@ -173,13 +177,8 @@ export function BuilderPlusMap({
   const basemap =
     BASEMAPS.find((item) => item.id === activeBasemap) ?? BASEMAPS[0];
 
-  function selectBasemap(nextBasemap: BasemapId) {
-    setActiveBasemap(nextBasemap);
-    setManualBasemapOverride(true);
-  }
-
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#050B18]">
+    <div className="absolute inset-0 overflow-hidden bg-[#0a1628]" style={{ left: sidebarWidth }}>
       <MapContainer
         ref={mapRef}
         center={AUSTRALIA_VIEW.center}
@@ -198,18 +197,13 @@ export function BuilderPlusMap({
         <BasemapZoomController
           autoSatellite={autoSatellite}
           manualOverride={manualBasemapOverride}
-          onAutoBasemap={setActiveBasemap}
+          onAutoBasemap={onBasemapChange}
         />
-        <TileLayer
+        <TileLayerWithFallback
           key={basemap.id}
-          url={basemap.tileUrl}
-          attribution={basemap.attribution}
-          className={
-            basemap.id === "satellite"
-              ? "builderplus-tiles-satellite"
-              : "builderplus-tiles"
-          }
-          updateWhenIdle
+          basemap={basemap}
+          activeBasemap={activeBasemap}
+          onBasemapChange={onBasemapChange}
         />
         <GeoJSON
           data={outsideActMask as GeoJsonObject}
@@ -261,33 +255,80 @@ export function BuilderPlusMap({
             onChange={onChangeFloorPlanOverlay}
           />
         )}
+        {process.env.NODE_ENV !== "production" && (
+          <TileDiagnostics activeBasemap={activeBasemap} />
+        )}
       </MapContainer>
-      <BasemapToggle
-        activeBasemap={activeBasemap}
-        autoSatellite={autoSatellite}
-        manualOverride={manualBasemapOverride}
-        onChange={selectBasemap}
-        onToggleAutoSatellite={() => {
-          setAutoSatellite((value) => !value);
-          setManualBasemapOverride(false);
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(5,11,24,0.18),transparent_36%,rgba(5,11,24,0.08))]" />
-      <div className="pointer-events-none absolute bottom-6 left-1/2 z-20 -translate-x-1/2 rounded-full border border-sky-300/20 bg-slate-950/70 px-4 py-2 text-xs font-medium text-sky-50 shadow-glass backdrop-blur-xl">
-        Currently available for ACT blocks only
-      </div>
-      {floorPlanOverlay && (
-        <FloorPlanControls
-          overlay={floorPlanOverlay}
-          onChange={onChangeFloorPlanOverlay}
-          onReset={onResetFloorPlanOverlay}
-          onRemove={onRemoveFloorPlanOverlay}
-        />
-      )}
       {tooltip && (
         <ParcelTooltip parcel={tooltip.parcel} x={tooltip.x} y={tooltip.y} />
       )}
     </div>
+  );
+}
+
+function TileLayerWithFallback({
+  basemap,
+  activeBasemap,
+  onBasemapChange
+}: {
+  basemap: typeof BASEMAPS[number];
+  activeBasemap: BasemapId;
+  onBasemapChange: (basemap: BasemapId) => void;
+}) {
+  const map = useMap();
+  const errorTimestampsRef = useRef<number[]>([]);
+  const fallbackTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    errorTimestampsRef.current = [];
+    fallbackTriggeredRef.current = false;
+  }, [activeBasemap]);
+
+  useEffect(() => {
+    const tileLayer = findTileLayer(map);
+    if (!tileLayer) return;
+
+    const onTileError = () => {
+      if (fallbackTriggeredRef.current) return;
+      if (!basemap.fallbackBasemapId) return;
+
+      const now = Date.now();
+      errorTimestampsRef.current.push(now);
+      errorTimestampsRef.current = errorTimestampsRef.current.filter(
+        (t) => now - t < TILE_ERROR_WINDOW_MS
+      );
+
+      if (errorTimestampsRef.current.length >= TILE_ERROR_THRESHOLD) {
+        fallbackTriggeredRef.current = true;
+        console.warn(
+          `[BuilderPlus] ${basemap.label} tiles failing — falling back to ${basemap.fallbackBasemapId}`
+        );
+        onBasemapChange(basemap.fallbackBasemapId);
+      }
+    };
+
+    tileLayer.on("tileerror", onTileError);
+    return () => {
+      tileLayer.off("tileerror", onTileError);
+    };
+  }, [map, basemap, onBasemapChange]);
+
+  return (
+    <TileLayer
+      url={basemap.tileUrl}
+      attribution={basemap.attribution}
+      minZoom={basemap.minZoom}
+      maxZoom={basemap.maxZoom}
+      maxNativeZoom={basemap.maxNativeZoom}
+      keepBuffer={6}
+      updateWhenIdle={false}
+      updateWhenZooming={true}
+      className={
+        basemap.id === "satellite"
+          ? "builderplus-tiles-satellite"
+          : "builderplus-tiles"
+      }
+    />
   );
 }
 
@@ -396,4 +437,58 @@ function registerParcelLayers(layer: LeafletGeoJSON, layerMap: Map<string, Path>
       layerMap.set(feature.properties.id, child);
     }
   });
+}
+
+function findTileLayer(map: L.Map): L.TileLayer | null {
+  const layers = (map as unknown as { _layers?: Record<string, L.Layer> })._layers;
+  if (!layers) return null;
+  for (const layer of Object.values(layers)) {
+    if (layer instanceof L.TileLayer) return layer;
+  }
+  return null;
+}
+
+function TileDiagnostics({ activeBasemap }: { activeBasemap: BasemapId }) {
+  const map = useMap();
+  const [stats, setStats] = useState({ loaded: 0, errors: 0, zoom: 0 });
+
+  useEffect(() => {
+    const updateZoom = () => setStats((s) => ({ ...s, zoom: map.getZoom() }));
+
+    const tileLayer = findTileLayer(map);
+    if (!tileLayer) {
+      updateZoom();
+      map.on("zoomend", updateZoom);
+      return () => { map.off("zoomend", updateZoom); };
+    }
+
+    const onLoad = () => setStats((s) => ({ ...s, loaded: s.loaded + 1 }));
+    const onError = () => setStats((s) => ({ ...s, errors: s.errors + 1 }));
+
+    tileLayer.on("tileload", onLoad);
+    tileLayer.on("tileerror", onError);
+    map.on("zoomend", updateZoom);
+    updateZoom();
+
+    const timer = setInterval(() => {
+      setStats((s) => ({ ...s, loaded: 0, errors: 0 }));
+    }, 10000);
+
+    return () => {
+      tileLayer.off("tileload", onLoad);
+      tileLayer.off("tileerror", onError);
+      map.off("zoomend", updateZoom);
+      clearInterval(timer);
+    };
+  }, [map, activeBasemap]);
+
+  return (
+    <div className="pointer-events-none absolute bottom-14 right-4 z-50 rounded-lg border border-white/10 bg-slate-950/80 px-3 py-2 text-[10px] text-slate-300 backdrop-blur-sm">
+      <div>Basemap: {activeBasemap} | Zoom: {stats.zoom}</div>
+      <div>Tiles: {stats.loaded} loaded / {stats.errors} errors</div>
+      {stats.errors > 0 && (
+        <div className="text-amber-300">Tile errors detected</div>
+      )}
+    </div>
+  );
 }

@@ -7,17 +7,21 @@ export type BasemapConfig = {
   label: string;
   tileUrl: string;
   attribution: string;
+  minZoom: number;
+  maxZoom: number;
+  maxNativeZoom: number;
+  fallbackBasemapId?: BasemapId;
 };
 
 export const MAP_TILE_URL =
   process.env.NEXT_PUBLIC_MAP_TILE_URL ??
   process.env.NEXT_PUBLIC_TILE_URL ??
-  "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 export const MAP_TILE_ATTRIBUTION =
   process.env.NEXT_PUBLIC_MAP_TILE_ATTRIBUTION ??
   process.env.NEXT_PUBLIC_TILE_ATTRIBUTION ??
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 export const SATELLITE_TILE_URL =
   process.env.NEXT_PUBLIC_SATELLITE_TILE_URL ??
@@ -32,13 +36,20 @@ export const BASEMAPS: BasemapConfig[] = [
     id: "map",
     label: "Map",
     tileUrl: MAP_TILE_URL,
-    attribution: MAP_TILE_ATTRIBUTION
+    attribution: MAP_TILE_ATTRIBUTION,
+    minZoom: 0,
+    maxZoom: 22,
+    maxNativeZoom: 19
   },
   {
     id: "satellite",
     label: "Satellite",
     tileUrl: SATELLITE_TILE_URL,
-    attribution: SATELLITE_TILE_ATTRIBUTION
+    attribution: SATELLITE_TILE_ATTRIBUTION,
+    minZoom: 0,
+    maxZoom: 22,
+    maxNativeZoom: 19,
+    fallbackBasemapId: "map"
   }
 ];
 
@@ -58,7 +69,7 @@ export const ACT_BBOX: BBox = [148.7628, -35.9205, 149.3993, -35.1245];
 
 export const MAP_ZOOM = {
   min: 4,
-  max: 19,
+  max: 22,
   suburb: 15,
   address: 17
 };
@@ -103,8 +114,6 @@ export const PARCEL_STYLES = {
 };
 
 export const ACTMAPI_CONFIG = {
-  // Keep ACTmapi / ArcGIS FeatureServer layer URLs server-only.
-  // Keep the UI pointed at /app/api routes so service URL changes stay server-only.
   divisionUrl: process.env.ACTMAPI_DIVISION_URL ?? "",
   blockUrl: process.env.ACTMAPI_BLOCK_URL ?? "",
   addressesUrl: process.env.ACTMAPI_ADDRESSES_URL ?? ""

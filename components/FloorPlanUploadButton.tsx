@@ -55,6 +55,7 @@ export function FloorPlanUploadButton({
         variant="secondary"
         disabled={disabled || !anchorLatLng}
         onClick={() => inputRef.current?.click()}
+        className="w-full"
       >
         <Upload className="h-4 w-4" />
         Upload floor plan

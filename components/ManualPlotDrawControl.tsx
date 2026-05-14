@@ -6,7 +6,7 @@ import L, { type LatLngLiteral, type PathOptions } from "leaflet";
 import { Check, Edit3, RotateCcw, X } from "lucide-react";
 import type { GeoJsonObject, Polygon as GeoJsonPolygon, Position } from "geojson";
 import { Button } from "@/components/ui/button";
-import { featureAreaSqm } from "@/lib/geometry";
+import { featureAreaSqm, featureCentroid } from "@/lib/geometry";
 import { PARCEL_STYLES } from "@/lib/mapConfig";
 import type { ManualPlotFeature } from "@/types/manualPlot";
 
@@ -26,6 +26,9 @@ const cornerIcon = L.divIcon({
   iconAnchor: [8, 8]
 });
 
+const MIN_POINTS = 3;
+const CLOSE_THRESHOLD_PX = 18;
+
 export function ManualPlotDrawControl({
   active,
   manualPlot,
@@ -43,10 +46,12 @@ export function ManualPlotDrawControl({
 }) {
   const map = useMap();
   const [points, setPoints] = useState<LatLngLiteral[]>([]);
+  const [hoveringClose, setHoveringClose] = useState(false);
 
   useEffect(() => {
     if (!active) {
       setPoints([]);
+      setHoveringClose(false);
       map.getContainer().style.cursor = "";
       return;
     }
@@ -60,11 +65,36 @@ export function ManualPlotDrawControl({
   }, [active, map]);
 
   useMapEvents({
-    click(event) {
-      if (!active || points.length >= 4) return;
-      setPoints((current) =>
-        current.length >= 4 ? current : [...current, event.latlng]
+    mousemove(event) {
+      if (!active || points.length < MIN_POINTS) {
+        setHoveringClose(false);
+        return;
+      }
+      const first = points[0];
+      const firstPx = map.latLngToContainerPoint(first);
+      const currentPx = map.latLngToContainerPoint(event.latlng);
+      const dist = Math.sqrt(
+        Math.pow(firstPx.x - currentPx.x, 2) + Math.pow(firstPx.y - currentPx.y, 2)
       );
+      setHoveringClose(dist < CLOSE_THRESHOLD_PX);
+    },
+    click(event) {
+      if (!active) return;
+
+      if (points.length >= MIN_POINTS) {
+        const first = points[0];
+        const firstPx = map.latLngToContainerPoint(first);
+        const currentPx = map.latLngToContainerPoint(event.latlng);
+        const dist = Math.sqrt(
+          Math.pow(firstPx.x - currentPx.x, 2) + Math.pow(firstPx.y - currentPx.y, 2)
+        );
+        if (dist < CLOSE_THRESHOLD_PX) {
+          finalizePlot(points);
+          return;
+        }
+      }
+
+      setPoints((current) => [...current, event.latlng]);
     },
     dblclick(event) {
       if (!active) return;
@@ -76,10 +106,9 @@ export function ManualPlotDrawControl({
     () => (points.length >= 2 ? toDraftPositions(points) : null),
     [points]
   );
-  const canConfirm = points.length === 4;
 
-  function confirmPlot() {
-    if (!canConfirm) return;
+  const draftAreaSqm = useMemo(() => {
+    if (points.length < MIN_POINTS) return null;
     const coordinates = closeRing(
       points.map((point) => [point.lng, point.lat] satisfies Position)
     );
@@ -87,6 +116,29 @@ export function ManualPlotDrawControl({
       type: "Polygon",
       coordinates: [coordinates]
     };
+    return featureAreaSqm({
+      type: "Feature",
+      properties: {},
+      geometry
+    });
+  }, [points]);
+
+  const canConfirm = points.length >= MIN_POINTS;
+
+  function finalizePlot(pts: LatLngLiteral[]) {
+    if (pts.length < MIN_POINTS) return;
+    const coordinates = closeRing(
+      pts.map((point) => [point.lng, point.lat] satisfies Position)
+    );
+    const geometry: GeoJsonPolygon = {
+      type: "Polygon",
+      coordinates: [coordinates]
+    };
+    const centroid = featureCentroid({
+      type: "Feature",
+      properties: {},
+      geometry
+    });
     const id = `manual-${Date.now()}`;
     const feature: ManualPlotFeature = {
       type: "Feature",
@@ -99,17 +151,24 @@ export function ManualPlotDrawControl({
         selectable: true,
         address: "User-drawn plot",
         block: "",
+        section: "",
         division: division || "ACT",
         areaSqm: featureAreaSqm({
           type: "Feature",
           properties: {},
           geometry
         }),
+        centroid,
         isManual: true
       }
     };
     onConfirm(feature);
     setPoints([]);
+    setHoveringClose(false);
+  }
+
+  function confirmPlot() {
+    finalizePlot(points);
   }
 
   return (
@@ -160,17 +219,28 @@ export function ManualPlotDrawControl({
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-white">
-                Click 4 corners of your intended plot
+                Click around your intended site
               </p>
               <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                {points.length}/4 corners placed. Drag a corner marker to refine
-                the outline before confirming.
+                {points.length < MIN_POINTS
+                  ? `${points.length}/${MIN_POINTS}+ corners placed. Keep clicking to outline your site.`
+                  : `${points.length} corners placed. Click near the first point to close, or press Confirm.`}
               </p>
+              {draftAreaSqm != null && (
+                <p className="mt-2 text-sm font-semibold text-sky-200">
+                  Approx area: {draftAreaSqm.toLocaleString()} m²
+                </p>
+              )}
+              {hoveringClose && (
+                <p className="mt-1 text-xs text-amber-200">
+                  Release to close shape
+                </p>
+              )}
             </div>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
-            <Button type="button" variant="secondary" onClick={() => setPoints([])}>
+            <Button type="button" variant="secondary" onClick={() => { setPoints([]); setHoveringClose(false); }}>
               <RotateCcw className="h-4 w-4" />
               Reset
             </Button>
@@ -183,6 +253,10 @@ export function ManualPlotDrawControl({
               Confirm
             </Button>
           </div>
+
+          <p className="mt-3 text-xs leading-relaxed text-amber-200/70">
+            Approximate manually drawn area. Not an official ACT cadastral boundary.
+          </p>
         </div>
       )}
     </>
