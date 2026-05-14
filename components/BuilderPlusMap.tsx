@@ -255,12 +255,12 @@ export function BuilderPlusMap({
             onChange={onChangeFloorPlanOverlay}
           />
         )}
+        {process.env.NODE_ENV !== "production" && (
+          <TileDiagnostics activeBasemap={activeBasemap} />
+        )}
       </MapContainer>
       {tooltip && (
         <ParcelTooltip parcel={tooltip.parcel} x={tooltip.x} y={tooltip.y} />
-      )}
-      {process.env.NODE_ENV !== "production" && (
-        <TileDiagnostics activeBasemap={activeBasemap} />
       )}
     </div>
   );
