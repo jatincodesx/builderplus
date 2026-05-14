@@ -103,6 +103,13 @@ export function BuilderPlusMap({
     selectedIdRef.current = selectedParcel?.properties.id ?? null;
   }, [selectedParcel]);
 
+  useEffect(() => {
+    if (manualDrawActive) {
+      setHoveredId(null);
+      setTooltip(null);
+    }
+  }, [manualDrawActive]);
+
   const selectableParcels = {
     ...parcels,
     features: parcels.features.filter((parcel) => parcel.properties.selectable === true)
@@ -140,6 +147,7 @@ export function BuilderPlusMap({
 
       layer.on({
         mouseover: (event: LeafletMouseEvent) => {
+          if (manualDrawActive) return;
           setHoveredId(id);
           setMapCursor("pointer");
           layer.setStyle(PARCEL_STYLES.hover);
@@ -151,6 +159,7 @@ export function BuilderPlusMap({
           });
         },
         mousemove: (event: LeafletMouseEvent) => {
+          if (manualDrawActive) return;
           setTooltip({
             parcel,
             x: event.originalEvent.clientX,
@@ -158,6 +167,7 @@ export function BuilderPlusMap({
           });
         },
         mouseout: () => {
+          if (manualDrawActive) return;
           setHoveredId(null);
           setMapCursor("");
           setTooltip(null);
