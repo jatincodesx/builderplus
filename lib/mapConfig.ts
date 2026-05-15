@@ -76,39 +76,39 @@ export const MAP_ZOOM = {
 
 export const PARCEL_STYLES = {
   normal: {
-    color: "rgba(15,23,42,0.55)",
+    color: "rgba(75,85,99,0.4)",
     weight: 1,
     opacity: 0.8,
-    fillColor: "rgba(255,255,255,0)",
+    fillColor: "rgba(59,130,246,0)",
     fillOpacity: 0
   },
   context: {
-    color: "rgba(71,85,105,0.45)",
+    color: "rgba(156,163,184,0.45)",
     weight: 0.8,
-    opacity: 0.75,
-    fillColor: "rgba(148,163,184,0.08)",
-    fillOpacity: 0.04
+    opacity: 0.6,
+    fillColor: "rgba(156,163,184,0.06)",
+    fillOpacity: 0.03
   },
   hover: {
-    color: "#0284C7",
+    color: "#2563EB",
     weight: 2,
     opacity: 0.95,
-    fillColor: "#38BDF8",
-    fillOpacity: 0.22
+    fillColor: "#3B82F6",
+    fillOpacity: 0.18
   },
   selected: {
-    color: "#0369A1",
+    color: "#1D4ED8",
     weight: 3,
     opacity: 1,
-    fillColor: "#0EA5E9",
-    fillOpacity: 0.32
+    fillColor: "#3B82F6",
+    fillOpacity: 0.28
   },
   manual: {
-    color: "#FBBF24",
+    color: "#D97706",
     weight: 3,
     opacity: 1,
     dashArray: "8 7",
-    fillColor: "#22D3EE",
+    fillColor: "#06B6D4",
     fillOpacity: 0.12
   }
 };

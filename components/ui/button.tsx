@@ -13,10 +13,10 @@ const buttonVariants = cva(
         default:
           "bg-primary text-primary-foreground shadow-glow hover:bg-[#1474E5]",
         secondary:
-          "border border-white/12 bg-white/10 text-white hover:bg-white/15",
-        ghost: "text-slate-200 hover:bg-white/10",
+          "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300",
+        ghost: "text-gray-600 hover:bg-gray-100",
         danger:
-          "border border-red-400/30 bg-red-500/10 text-red-100 hover:bg-red-500/20"
+          "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
       },
       size: {
         default: "h-11 px-5",

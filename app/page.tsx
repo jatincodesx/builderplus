@@ -350,7 +350,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            className="glass-panel absolute bottom-4 left-4 z-20 max-w-sm rounded-2xl p-4 text-sm text-slate-200"
+            className="glass-panel absolute bottom-4 left-4 z-20 max-w-sm rounded-2xl p-4 text-sm text-gray-600"
             style={{ left: SIDEBAR_WIDTH + 16 }}
           >
             {notice}
@@ -359,8 +359,8 @@ export default function Home() {
       </AnimatePresence>
 
       {process.env.NODE_ENV !== "production" && showFallbackWarning && (
-        <div className="absolute bottom-4 right-4 z-20 flex max-w-xs items-start gap-2 rounded-2xl border border-amber-300/20 bg-amber-400/10 p-3 text-xs text-amber-50 backdrop-blur-xl">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-200" />
+        <div className="absolute bottom-4 right-4 z-20 flex max-w-xs items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 backdrop-blur-xl">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
           {fallbackReason ??
             "Development fallback data is active because live ACTmapi returned fallback parcel data."}
         </div>

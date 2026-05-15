@@ -49,13 +49,13 @@ export function FloorPlanControls({
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
             Floor plan overlay
           </p>
-          <p className="mt-1 max-w-[210px] truncate text-sm font-semibold text-white">
+          <p className="mt-1 max-w-[210px] truncate text-sm font-semibold text-gray-900">
             {overlay.fileName ?? "Design overlay"}
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-gray-400">
             Scale: {scalePercent}%
           </p>
         </div>
@@ -74,7 +74,7 @@ export function FloorPlanControls({
         </Button>
       </div>
 
-      <label className="grid gap-2 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">
+      <label className="grid gap-2 text-xs font-medium uppercase tracking-[0.12em] text-gray-400">
         Opacity
         <input
           type="range"
@@ -84,7 +84,7 @@ export function FloorPlanControls({
           onChange={(event) =>
             update({ opacity: Number(event.target.value) / 100 })
           }
-          className="accent-sky-300"
+          className="accent-blue-500"
         />
       </label>
 
@@ -138,27 +138,27 @@ export function FloorPlanControls({
         </Button>
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+      <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-400">
           Design fit
         </p>
-        <p className="mt-2 text-sm font-semibold text-white">{fitLabel}</p>
+        <p className="mt-2 text-sm font-semibold text-gray-900">{fitLabel}</p>
         {overlay.floorAreaSqm != null && (
-          <p className="mt-1 text-xs text-slate-300">
+          <p className="mt-1 text-xs text-gray-500">
             Design area: {overlay.floorAreaSqm.toLocaleString()} m²
           </p>
         )}
         {overlay.widthM != null && overlay.depthM != null && (
-          <p className="mt-1 text-xs text-slate-300">
+          <p className="mt-1 text-xs text-gray-500">
             Dimensions: {overlay.widthM}m x {overlay.depthM}m
           </p>
         )}
         {selectedPlotAreaSqm != null && (
-          <p className="mt-1 text-xs text-slate-300">
+          <p className="mt-1 text-xs text-gray-500">
             Plot area: {selectedPlotAreaSqm.toLocaleString()} m²
           </p>
         )}
-        <p className="mt-2 text-xs leading-relaxed text-amber-200/80">
+        <p className="mt-2 text-xs leading-relaxed text-amber-700">
           Area fit is an early guide only. Width, depth, setbacks and buildable envelope still need checking.
         </p>
       </div>
@@ -174,7 +174,7 @@ export function FloorPlanControls({
         </Button>
       </div>
 
-      <p className="text-xs leading-relaxed text-slate-400">
+      <p className="text-xs leading-relaxed text-gray-400">
         Approximate visual overlay only. Not a surveyed or approval-ready
         placement.
       </p>

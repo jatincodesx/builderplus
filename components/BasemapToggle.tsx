@@ -17,11 +17,11 @@ export function BasemapToggle({
   onToggleAutoSatellite: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
-      <p className="mb-2 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
+      <p className="mb-2 text-xs font-medium uppercase tracking-[0.12em] text-gray-400">
         Basemap
       </p>
-      <div className="grid grid-cols-2 gap-1">
+      <div className="grid grid-cols-2 gap-1.5">
         {BASEMAPS.map((basemap) => (
           <button
             key={basemap.id}
@@ -30,8 +30,8 @@ export function BasemapToggle({
             className={cn(
               "rounded-lg px-3 py-2 text-xs font-semibold transition",
               activeBasemap === basemap.id
-                ? "bg-sky-400 text-slate-950 shadow-glow"
-                : "bg-white/[0.06] text-slate-200 hover:bg-white/12 hover:text-white"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "bg-gray-50 text-gray-600 hover:bg-gray-100"
             )}
           >
             {basemap.label}
@@ -44,8 +44,8 @@ export function BasemapToggle({
         className={cn(
           "mt-2 flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-xs transition",
           autoSatellite && !manualOverride
-            ? "border-sky-300/30 bg-sky-400/12 text-sky-50"
-            : "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/10"
+            ? "border-blue-200 bg-blue-50 text-blue-700"
+            : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
         )}
       >
         <span>Auto satellite at close zoom</span>

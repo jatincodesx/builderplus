@@ -122,6 +122,7 @@ export function SearchPanel({
             eyebrow: "BuilderPlus",
             title: "Design smarter on your ACT block.",
             sub: "Search Canberra suburbs and addresses, then select a parcel to start an early feasibility view."
+
           },
     [activeLabel, compact]
   );
@@ -170,12 +171,12 @@ export function SearchPanel({
     >
       <div className={compact ? "space-y-4" : "space-y-6"}>
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-200">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">
             {titleCopy.eyebrow}
           </p>
           <h1
             className={cn(
-              "mt-3 font-semibold leading-tight text-white",
+              "mt-3 font-bold leading-tight tracking-tight text-gray-900",
               compact ? "text-2xl" : "text-5xl"
             )}
           >
@@ -183,7 +184,7 @@ export function SearchPanel({
           </h1>
           <p
             className={cn(
-              "mt-3 leading-relaxed text-slate-300",
+              "mt-3 leading-relaxed text-gray-500",
               compact ? "text-sm" : "text-base"
             )}
           >
@@ -192,19 +193,19 @@ export function SearchPanel({
         </div>
 
         <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search an ACT suburb or address"
-            className="h-14 w-full rounded-2xl border border-white/12 bg-white/[0.08] pl-12 pr-12 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-sky-300/60 focus:bg-white/[0.11] focus:ring-4 focus:ring-sky-400/10"
+            className="h-14 w-full rounded-full border border-gray-200 bg-white pl-12 pr-12 text-base text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
           />
           {loading ? (
-            <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-sky-300" />
+            <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-blue-500" />
           ) : query ? (
             <button
               aria-label="Clear search"
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-white"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-700"
               onClick={() => {
                 setQuery("");
                 setResults([]);
@@ -224,15 +225,15 @@ export function SearchPanel({
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              className="max-h-64 overflow-auto rounded-2xl border border-white/10 bg-slate-950/45 p-2 subtle-scrollbar"
+              className="max-h-64 overflow-auto rounded-2xl border border-gray-200 bg-white p-2 shadow-card subtle-scrollbar"
             >
               {results.map((result) => (
                 <button
                   key={`${result.type}-${result.id}`}
                   onClick={() => handleSelect(result)}
-                  className="flex w-full items-start gap-3 rounded-xl p-3 text-left transition hover:bg-white/10"
+                  className="flex w-full items-start gap-3 rounded-xl p-3 text-left transition hover:bg-gray-50"
                 >
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-400/15 text-sky-200">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                     {result.type === "suburb" ? (
                       <LocateFixed className="h-4 w-4" />
                     ) : (
@@ -240,10 +241,10 @@ export function SearchPanel({
                     )}
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold text-white">
+                    <span className="block text-sm font-semibold text-gray-900">
                       {result.type === "suburb" ? result.name : result.label}
                     </span>
-                    <span className="mt-1 block text-xs text-slate-400">
+                    <span className="mt-1 block text-xs text-gray-400">
                       {result.type === "suburb"
                         ? "Suburb / division"
                         : "Address / block"}
@@ -252,11 +253,11 @@ export function SearchPanel({
                 </button>
               ))}
               {emptyActOnly && (
-                <p className="p-3 text-sm text-slate-300">
+                <p className="p-3 text-sm text-gray-500">
                   BuilderPlus currently supports ACT blocks only.
                 </p>
               )}
-              {error && <p className="p-3 text-sm text-red-100">{error}</p>}
+              {error && <p className="p-3 text-sm text-red-600">{error}</p>}
             </motion.div>
           )}
         </AnimatePresence>
@@ -266,7 +267,7 @@ export function SearchPanel({
             <button
               key={suburb}
               onClick={() => selectQuickSuburb(suburb)}
-              className="rounded-full border border-white/12 bg-white/[0.07] px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-sky-300/50 hover:bg-sky-400/15 hover:text-white"
+              className="rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
             >
               {suburb}
             </button>
@@ -277,13 +278,13 @@ export function SearchPanel({
           <>
             <Stepper activeStep={selected ? 3 : activeLabel ? 2 : 1} selected={selected} />
             {loadingParcels && (
-              <div className="grid gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+              <div className="grid gap-2 rounded-2xl border border-gray-200 bg-white p-3 shadow-card">
                 <Skeleton className="h-3 w-40" />
                 <Skeleton className="h-3 w-56" />
               </div>
             )}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-              <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">
+            <div className="rounded-2xl border border-gray-200 bg-white p-3 shadow-card">
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-400">
                 Missing block?
               </p>
               <Button

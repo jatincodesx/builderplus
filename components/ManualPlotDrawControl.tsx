@@ -21,7 +21,7 @@ const draftStyle: PathOptions = {
 
 const cornerIcon = L.divIcon({
   className: "",
-  html: '<span class="block h-4 w-4 rounded-full border-2 border-slate-950 bg-amber-300 shadow-[0_0_0_3px_rgba(251,191,36,0.35)]"></span>',
+  html: '<span class="block h-4 w-4 rounded-full border-2 border-white bg-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.35)]"></span>',
   iconSize: [16, 16],
   iconAnchor: [8, 8]
 });
@@ -212,36 +212,36 @@ export function ManualPlotDrawControl({
         ))}
 
       {active && (
-        <div className="glass-panel pointer-events-auto absolute left-1/2 top-4 z-30 w-[420px] max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl p-4 text-slate-200">
+        <div className="glass-panel pointer-events-auto absolute left-1/2 top-4 z-30 w-[420px] max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl p-4 text-gray-700">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-300/20 text-amber-100">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
               <Edit3 className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white">
+              <p className="text-sm font-semibold text-gray-900">
                 Click around your intended site
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-400">
+              <p className="mt-1 text-xs leading-relaxed text-gray-500">
                 {points.length < MIN_POINTS
                   ? `${points.length}/${MIN_POINTS}+ corners placed. Keep clicking to outline your site.`
                   : `${points.length} corners placed. Click near the first point to close, or press Confirm.`}
               </p>
               {draftAreaSqm != null && (
-                <p className="mt-2 text-sm font-semibold text-sky-200">
+                <p className="mt-2 text-sm font-semibold text-blue-600">
                   Approx area: {draftAreaSqm.toLocaleString()} m²
                 </p>
               )}
               {hoveringClose && (
-                <p className="mt-1 text-xs text-amber-200">
+                <p className="mt-1 text-xs text-amber-700">
                   Release to close shape
                 </p>
               )}
             </div>
           </div>
 
-          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-300/20 bg-amber-300/10 p-2.5">
-            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-200" />
-            <p className="text-xs leading-relaxed text-amber-100/80">
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+            <p className="text-xs leading-relaxed text-amber-700">
               Manual draw mode active. Parcel auto-selection is disabled.
             </p>
           </div>
@@ -261,7 +261,7 @@ export function ManualPlotDrawControl({
             </Button>
           </div>
 
-          <p className="mt-3 text-xs leading-relaxed text-amber-200/70">
+          <p className="mt-3 text-xs leading-relaxed text-amber-700">
             Approximate manually drawn area. Not an official ACT cadastral boundary.
           </p>
         </div>

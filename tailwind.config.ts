@@ -10,24 +10,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#050B18",
-        foreground: "#F8FAFC",
+        background: "#FAFAFA",
+        foreground: "#111827",
         primary: {
           DEFAULT: "#0B63CE",
           foreground: "#FFFFFF"
         },
-        border: "rgba(255,255,255,0.12)"
+        border: "#E5E7EB"
       },
       boxShadow: {
-        glass: "0 24px 80px rgba(0, 0, 0, 0.45)",
-        glow: "0 0 40px rgba(11, 99, 206, 0.35)"
+        glass: "0 8px 40px rgba(0, 0, 0, 0.06)",
+        glow: "0 0 24px rgba(11, 99, 206, 0.18)",
+        card: "0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04)"
       },
       borderRadius: {
         xl: "1rem",
         "2xl": "1.25rem"
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui"]
+        sans: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "\"Segoe UI\"", "sans-serif"]
       }
     }
   },

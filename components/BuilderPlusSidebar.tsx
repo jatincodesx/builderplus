@@ -38,7 +38,7 @@ type SearchResponse<T> = {
   results: T[];
 };
 
-export const SIDEBAR_WIDTH = 380;
+export const SIDEBAR_WIDTH = 400;
 
 export function BuilderPlusSidebar({
   activeLocation,
@@ -190,11 +190,11 @@ export function BuilderPlusSidebar({
 
   return (
     <aside
-      className="fixed left-0 top-0 z-30 flex h-screen flex-col border-r border-white/10 bg-[#0a1628]/95 backdrop-blur-xl"
+      className="fixed left-0 top-0 z-30 flex h-screen flex-col border-r border-gray-200 bg-white shadow-sm"
       style={{ width: SIDEBAR_WIDTH }}
     >
-      <div className="subtle-scrollbar flex-1 overflow-y-auto p-5">
-        <div className="space-y-5">
+      <div className="subtle-scrollbar flex-1 overflow-y-auto px-6 py-6">
+        <div className="space-y-6">
           <div className="flex items-center gap-3">
             <Image
               src="/brand/lumox-icon-blue.png"
@@ -204,38 +204,38 @@ export function BuilderPlusSidebar({
               className="shrink-0"
             />
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-200">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">
                 BuilderPlus
               </p>
-              <p className="text-[11px] tracking-wide text-slate-400">
+              <p className="text-[11px] tracking-wide text-gray-400">
                 by Lumox Technologies
               </p>
             </div>
           </div>
 
           <div>
-            <h1 className="text-3xl font-semibold leading-tight text-white">
+            <h1 className="text-[28px] font-bold leading-tight tracking-tight text-gray-900">
               {titleCopy.title}
             </h1>
-            <p className="mt-3 text-sm leading-relaxed text-slate-300">
+            <p className="mt-3 text-sm leading-relaxed text-gray-500">
               {titleCopy.sub}
             </p>
           </div>
 
           <div className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search an ACT suburb or address"
-              className="h-12 w-full rounded-xl border border-white/12 bg-white/[0.08] pl-12 pr-12 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-300/60 focus:bg-white/[0.11] focus:ring-4 focus:ring-sky-400/10"
+              className="h-12 w-full rounded-full border border-gray-200 bg-white pl-12 pr-12 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
             />
             {loading ? (
-              <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-sky-300" />
+              <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-blue-500" />
             ) : query ? (
               <button
                 aria-label="Clear search"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-white"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-700"
                 onClick={() => {
                   setQuery("");
                   setResults([]);
@@ -252,15 +252,15 @@ export function BuilderPlusSidebar({
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
-                className="max-h-56 overflow-auto rounded-xl border border-white/10 bg-slate-950/45 p-2 subtle-scrollbar"
+                className="max-h-56 overflow-auto rounded-2xl border border-gray-200 bg-white p-2 shadow-card subtle-scrollbar"
               >
                 {results.map((result) => (
                   <button
                     key={`${result.type}-${result.id}`}
                     onClick={() => handleSelect(result)}
-                    className="flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition hover:bg-white/10"
+                    className="flex w-full items-start gap-3 rounded-xl p-2.5 text-left transition hover:bg-gray-50"
                   >
-                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-400/15 text-sky-200">
+                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                       {result.type === "suburb" ? (
                         <LocateFixed className="h-3.5 w-3.5" />
                       ) : (
@@ -268,10 +268,10 @@ export function BuilderPlusSidebar({
                       )}
                     </span>
                     <span>
-                      <span className="block text-sm font-semibold text-white">
+                      <span className="block text-sm font-semibold text-gray-900">
                         {result.type === "suburb" ? result.name : result.label}
                       </span>
-                      <span className="mt-0.5 block text-xs text-slate-400">
+                      <span className="mt-0.5 block text-xs text-gray-400">
                         {result.type === "suburb"
                           ? "Suburb / division"
                           : "Address / block"}
@@ -280,21 +280,21 @@ export function BuilderPlusSidebar({
                   </button>
                 ))}
                 {emptyActOnly && (
-                  <p className="p-3 text-sm text-slate-300">
+                  <p className="p-3 text-sm text-gray-500">
                     BuilderPlus currently supports ACT blocks only.
                   </p>
                 )}
-                {error && <p className="p-3 text-sm text-red-100">{error}</p>}
+                {error && <p className="p-3 text-sm text-red-600">{error}</p>}
               </motion.div>
             )}
           </AnimatePresence>
 
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {quickSuburbs.map((suburb) => (
               <button
                 key={suburb}
                 onClick={() => selectQuickSuburb(suburb)}
-                className="rounded-full border border-white/12 bg-white/[0.07] px-2.5 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-sky-300/50 hover:bg-sky-400/15 hover:text-white"
+                className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
               >
                 {suburb}
               </button>
@@ -307,36 +307,36 @@ export function BuilderPlusSidebar({
           />
 
           {loadingParcels && (
-            <div className="grid gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-3">
+            <div className="grid gap-2 rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
               <Skeleton className="h-3 w-40" />
               <Skeleton className="h-3 w-56" />
             </div>
           )}
 
-          <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-400">
               Missing block?
             </p>
             <Button
               type="button"
               variant={manualDrawActive ? "default" : "secondary"}
-              className="mt-2 w-full"
+              className="mt-3 w-full"
               onClick={onStartManualPlot}
             >
               <PencilRuler className="h-4 w-4" />
               Draw plot manually
             </Button>
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-2 text-xs text-gray-400">
               Draw around one or more blocks to define your intended site.
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <Layers className="h-4 w-4 text-sky-300" />
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <Layers className="h-4 w-4 text-blue-500" />
               Floor plan / design
             </div>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-gray-500">
               {selectedParcel
                 ? "Upload a floor plan to overlay on the selected plot."
                 : "Select a block first to enable floor plan overlay."}
@@ -349,7 +349,7 @@ export function BuilderPlusSidebar({
               />
             </div>
             {floorPlanOverlay && (
-              <div className="mt-4 border-t border-white/10 pt-4">
+              <div className="mt-4 border-t border-gray-100 pt-4">
                 <FloorPlanControls
                   overlay={floorPlanOverlay}
                   selectedPlotAreaSqm={selectedParcel?.properties.areaSqm}

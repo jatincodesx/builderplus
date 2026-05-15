@@ -5,8 +5,8 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  background: #050b18;
+  color-scheme: light;
+  background: #FAFAFA;
 }
 
 * {
@@ -17,8 +17,8 @@ html,
 body {
   min-height: 100%;
   margin: 0;
-  background: #050b18;
-  color: #f8fafc;
+  background: #FAFAFA;
+  color: #111827;
 }
 
 body {
@@ -32,11 +32,11 @@ input {
 }
 
 .builderplus-leaflet-map {
-  background: #0a1628;
+  background: #E5E7EB;
 }
 
 .builderplus-tiles {
-  filter: saturate(0.88) brightness(1.04);
+  filter: saturate(0.92) brightness(1.02);
 }
 
 .builderplus-tiles-satellite {
@@ -53,7 +53,7 @@ input {
 
 .leaflet-container {
   font: inherit;
-  color: #f8fafc;
+  color: #111827;
 }
 
 .leaflet-control-container .leaflet-top {
@@ -71,51 +71,47 @@ input {
 
 .leaflet-control-zoom {
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid #E5E7EB !important;
   border-radius: 14px !important;
-  background: rgba(5, 11, 24, 0.72);
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.34);
-  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
 }
 
 .leaflet-control-zoom a {
   border: 0 !important;
-  background: rgba(5, 11, 24, 0.72) !important;
-  color: #e0f2fe !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #374151 !important;
   line-height: 30px !important;
 }
 
 .leaflet-control-zoom a:hover {
-  background: rgba(11, 99, 206, 0.34) !important;
-  color: #ffffff !important;
+  background: rgba(11, 99, 206, 0.08) !important;
+  color: #0B63CE !important;
 }
 
 .leaflet-control-attribution {
   border-radius: 999px 0 0 0;
-  background: rgba(5, 11, 24, 0.64) !important;
-  color: rgba(226, 232, 240, 0.72) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: rgba(75, 85, 99, 0.72) !important;
   font-size: 10px;
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
 }
 
 .leaflet-control-attribution a {
-  color: rgba(186, 230, 253, 0.88) !important;
+  color: rgba(11, 99, 206, 0.72) !important;
 }
 
 .glass-panel {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(
-    145deg,
-    rgba(11, 22, 42, 0.78),
-    rgba(5, 11, 24, 0.62)
-  );
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
   backdrop-filter: blur(24px);
 }
 
 .subtle-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
 }
 
 .subtle-scrollbar::-webkit-scrollbar {
@@ -123,6 +119,6 @@ input {
 }
 
 .subtle-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.45);
+  background: rgba(156, 163, 175, 0.4);
   border-radius: 999px;
 }

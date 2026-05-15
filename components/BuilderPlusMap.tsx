@@ -34,20 +34,20 @@ import type { SearchResult } from "@/types/search";
 const ACT_BOUNDS = bboxToLeafletBounds(ACT_BBOX);
 
 const maskStyle: PathOptions = {
-  color: "#020617",
+  color: "#9CA3AF",
   weight: 0,
-  fillColor: "#020617",
-  fillOpacity: 0.15,
+  fillColor: "#9CA3AF",
+  fillOpacity: 0.08,
   fillRule: "evenodd",
   interactive: false
 };
 
 const boundaryStyle: PathOptions = {
-  color: "#38BDF8",
+  color: "#3B82F6",
   weight: 2.4,
-  opacity: 0.9,
-  fillColor: "#0B63CE",
-  fillOpacity: 0.04,
+  opacity: 0.7,
+  fillColor: "#3B82F6",
+  fillOpacity: 0.02,
   interactive: false
 };
 
@@ -196,7 +196,7 @@ export function BuilderPlusMap({
     BASEMAPS.find((item) => item.id === activeBasemap) ?? BASEMAPS[0];
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#0a1628]" style={{ left: sidebarWidth }}>
+    <div className="absolute inset-0 overflow-hidden bg-gray-200" style={{ left: sidebarWidth }}>
       <MapContainer
         ref={mapRef}
         center={AUSTRALIA_VIEW.center}
@@ -282,7 +282,7 @@ export function BuilderPlusMap({
         <ParcelTooltip parcel={tooltip.parcel} x={tooltip.x} y={tooltip.y} />
       )}
       {process.env.NODE_ENV !== "production" && manualDrawActive && (
-        <div className="pointer-events-none absolute top-14 right-4 z-50 rounded-lg border border-amber-400/30 bg-amber-900/80 px-3 py-1.5 text-xs font-semibold text-amber-100 backdrop-blur-sm">
+        <div className="pointer-events-none absolute top-14 right-4 z-50 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 backdrop-blur-sm">
           Draw mode state: ACTIVE
         </div>
       )}
@@ -507,11 +507,11 @@ function TileDiagnostics({ activeBasemap }: { activeBasemap: BasemapId }) {
   }, [map, activeBasemap]);
 
   return (
-    <div className="pointer-events-none absolute bottom-14 right-4 z-50 rounded-lg border border-white/10 bg-slate-950/80 px-3 py-2 text-[10px] text-slate-300 backdrop-blur-sm">
+    <div className="pointer-events-none absolute bottom-14 right-4 z-50 rounded-lg border border-gray-200 bg-white/90 px-3 py-2 text-[10px] text-gray-500 backdrop-blur-sm">
       <div>Basemap: {activeBasemap} | Zoom: {stats.zoom}</div>
       <div>Tiles: {stats.loaded} loaded / {stats.errors} errors</div>
       {stats.errors > 0 && (
-        <div className="text-amber-300">Tile errors detected</div>
+        <div className="text-amber-600">Tile errors detected</div>
       )}
     </div>
   );

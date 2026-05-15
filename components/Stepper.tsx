@@ -23,23 +23,26 @@ export function Stepper({
             className={cn(
               "rounded-xl border px-3 py-3 transition",
               active
-                ? "border-sky-300/40 bg-sky-400/15"
-                : "border-white/10 bg-white/[0.04]"
+                ? "border-blue-200 bg-blue-50"
+                : "border-gray-200 bg-white"
             )}
           >
             <div
               className={cn(
                 "mb-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold",
                 complete
-                  ? "bg-sky-400 text-slate-950"
+                  ? "bg-blue-500 text-white"
                   : active
-                    ? "bg-white text-slate-950"
-                    : "bg-white/10 text-slate-300"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-400"
               )}
             >
               {complete ? <Check className="h-3.5 w-3.5" /> : stepNumber}
             </div>
-            <div className="text-xs font-medium leading-tight text-slate-200">
+            <div className={cn(
+              "text-xs font-medium leading-tight",
+              active ? "text-gray-900" : "text-gray-500"
+            )}>
               {step}
             </div>
           </div>

@@ -61,9 +61,9 @@ export function FloorPlanUploadButton({
         Upload floor plan
       </Button>
       {disabled || !anchorLatLng ? (
-        <p className="text-xs text-slate-400">Select a block first.</p>
+        <p className="text-xs text-gray-400">Select a block first.</p>
       ) : error ? (
-        <p className="text-xs text-red-100">{error}</p>
+        <p className="text-xs text-red-600">{error}</p>
       ) : null}
     </div>
   );
