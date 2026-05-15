@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { NextRequest, NextResponse } from "next/server";
 import { parcelsByBbox } from "@/lib/actmapi";
 import type { BBox } from "@/types/geo";
