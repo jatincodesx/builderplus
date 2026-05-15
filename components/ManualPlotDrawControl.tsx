@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { GeoJSON, Marker, Polygon, useMap, useMapEvents } from "react-leaflet";
 import L, { type LatLngLiteral, type PathOptions } from "leaflet";
-import { Check, Edit3, RotateCcw, X } from "lucide-react";
+import { Check, Edit3, Info, RotateCcw, X } from "lucide-react";
 import type { GeoJsonObject, Polygon as GeoJsonPolygon, Position } from "geojson";
 import { Button } from "@/components/ui/button";
 import { featureAreaSqm, featureCentroid } from "@/lib/geometry";
@@ -237,6 +237,13 @@ export function ManualPlotDrawControl({
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-300/20 bg-amber-300/10 p-2.5">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-200" />
+            <p className="text-xs leading-relaxed text-amber-100/80">
+              Manual draw mode active. Parcel auto-selection is disabled.
+            </p>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
