@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -144,12 +145,10 @@ export function BuilderPlusSidebar({
     () =>
       hasLocation
         ? {
-            eyebrow: "BuilderPlus",
             title: "Find an ACT block",
             sub: activeLabel ?? "Search Canberra suburbs or addresses."
           }
         : {
-            eyebrow: "BuilderPlus",
             title: "Design smarter on your ACT block.",
             sub: "Search Canberra suburbs and addresses, then select a parcel to start an early feasibility view."
           },
@@ -196,11 +195,26 @@ export function BuilderPlusSidebar({
     >
       <div className="subtle-scrollbar flex-1 overflow-y-auto p-5">
         <div className="space-y-5">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/brand/lumox-icon-blue.png"
+              alt="Lumox Technologies"
+              width={36}
+              height={36}
+              className="shrink-0"
+            />
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-200">
+                BuilderPlus
+              </p>
+              <p className="text-[11px] tracking-wide text-slate-400">
+                by Lumox Technologies
+              </p>
+            </div>
+          </div>
+
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-200">
-              {titleCopy.eyebrow}
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold leading-tight text-white">
+            <h1 className="text-3xl font-semibold leading-tight text-white">
               {titleCopy.title}
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-slate-300">

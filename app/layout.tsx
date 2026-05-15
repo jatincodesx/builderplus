@@ -2,8 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BuilderPlus",
-  description: "Select ACT residential blocks and explore early feasibility."
+  title: "BuilderPlus by Lumox Technologies",
+  description:
+    "BuilderPlus helps users find ACT blocks, draw plots, and explore house design fit.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/apple-touch-icon.png"
+  }
 };
 
 export default function RootLayout({
