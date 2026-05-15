@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
+import { AccessGate } from "@/components/access-gate/AccessGate";
 import { BuilderPlusMapDynamic as BuilderPlusMap } from "@/components/BuilderPlusMapDynamic";
 import { BuilderPlusSidebar, SIDEBAR_WIDTH } from "@/components/BuilderPlusSidebar";
 import { SelectedPlotPanel } from "@/components/SelectedPlotPanel";
@@ -20,7 +21,7 @@ const emptyParcels: ParcelFeatureCollection = {
   features: []
 };
 
-export default function Home() {
+function BuilderPlusApp() {
   const [activeLocation, setActiveLocation] = useState<SearchResult | null>(null);
   const [parcels, setParcels] = useState<ParcelFeatureCollection>(emptyParcels);
   const [selectedParcel, setSelectedParcel] = useState<ParcelFeature | null>(null);
@@ -366,6 +367,14 @@ export default function Home() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <AccessGate>
+      <BuilderPlusApp />
+    </AccessGate>
   );
 }
 
