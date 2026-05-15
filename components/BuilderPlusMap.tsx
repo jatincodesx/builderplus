@@ -92,6 +92,7 @@ export function BuilderPlusMap({
   const mapRef = useRef<L.Map | null>(null);
   const layerRefs = useRef(new Map<string, Path>());
   const selectedIdRef = useRef<string | null>(null);
+  const manualDrawActiveRef = useRef(manualDrawActive);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{
     parcel: ParcelFeature;
@@ -102,6 +103,13 @@ export function BuilderPlusMap({
   useEffect(() => {
     selectedIdRef.current = selectedParcel?.properties.id ?? null;
   }, [selectedParcel]);
+
+  useEffect(() => {
+    manualDrawActiveRef.current = manualDrawActive;
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[BuilderPlus] manualDrawActive:", manualDrawActive);
+    }
+  }, [manualDrawActive]);
 
   useEffect(() => {
     if (manualDrawActive) {
@@ -147,7 +155,7 @@ export function BuilderPlusMap({
 
       layer.on({
         mouseover: (event: LeafletMouseEvent) => {
-          if (manualDrawActive) return;
+          if (manualDrawActiveRef.current) return;
           setHoveredId(id);
           setMapCursor("pointer");
           layer.setStyle(PARCEL_STYLES.hover);
@@ -159,7 +167,7 @@ export function BuilderPlusMap({
           });
         },
         mousemove: (event: LeafletMouseEvent) => {
-          if (manualDrawActive) return;
+          if (manualDrawActiveRef.current) return;
           setTooltip({
             parcel,
             x: event.originalEvent.clientX,
@@ -167,21 +175,21 @@ export function BuilderPlusMap({
           });
         },
         mouseout: () => {
-          if (manualDrawActive) return;
+          if (manualDrawActiveRef.current) return;
           setHoveredId(null);
           setMapCursor("");
           setTooltip(null);
           layer.setStyle(getParcelStyle(id, null, selectedIdRef.current));
         },
         click: () => {
-          if (manualDrawActive) return;
+          if (manualDrawActiveRef.current) return;
           if (parcel.properties.selectable === true) {
             onSelectParcel(parcel);
           }
         }
       });
     },
-    [hoveredId, manualDrawActive, onSelectParcel, setMapCursor]
+    [hoveredId, onSelectParcel, setMapCursor]
   );
 
   const basemap =
@@ -232,7 +240,7 @@ export function BuilderPlusMap({
           interactive={false}
         />
         <GeoJSON
-          key={`selectable-${selectableParcels.features.map((parcel) => parcel.properties.id).join("|")}`}
+          key={`selectable-${manualDrawActive ? "draw" : "select"}-${selectableParcels.features.map((parcel) => parcel.properties.id).join("|")}`}
           ref={(layer) => {
             if (!layer) return;
             registerParcelLayers(layer, layerRefs.current);
@@ -246,6 +254,7 @@ export function BuilderPlusMap({
             )
           }
           onEachFeature={onEachParcel}
+          interactive={!manualDrawActive}
         />
         <ManualPlotDrawControl
           active={manualDrawActive}
@@ -271,6 +280,11 @@ export function BuilderPlusMap({
       </MapContainer>
       {tooltip && (
         <ParcelTooltip parcel={tooltip.parcel} x={tooltip.x} y={tooltip.y} />
+      )}
+      {process.env.NODE_ENV !== "production" && manualDrawActive && (
+        <div className="pointer-events-none absolute top-14 right-4 z-50 rounded-lg border border-amber-400/30 bg-amber-900/80 px-3 py-1.5 text-xs font-semibold text-amber-100 backdrop-blur-sm">
+          Draw mode state: ACTIVE
+        </div>
       )}
     </div>
   );
