@@ -7,6 +7,7 @@ import { getActiveAdapter } from "@/lib/designs/catalogueAdapter";
 import { matchDesignsToPlot } from "@/lib/designs/matchingEngine";
 import type { SelectedPlot } from "@/types/plot";
 import type { HouseDesign, DesignMatch } from "@/types/design";
+import type { CatalogueSource } from "@/lib/designs/s3Catalogue";
 
 export function DesignResultsPanel({
   selectedPlot,
@@ -16,8 +17,9 @@ export function DesignResultsPanel({
   onPlaceDesign: (match: DesignMatch) => void;
 }) {
   const [designs, setDesigns] = useState<HouseDesign[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [source, setSource] = useState<CatalogueSource | null>(null);
   const [showTooLarge, setShowTooLarge] = useState(false);
 
   useEffect(() => {
@@ -25,16 +27,30 @@ export function DesignResultsPanel({
     setLoading(true);
     setError("");
 
-    getActiveAdapter()
-      .loadDesigns()
+    if (process.env.NODE_ENV !== "production") {
+      console.time("[BuilderPlus] design-catalogue-load");
+    }
+
+    const adapter = getActiveAdapter();
+    const loadPromise = adapter.loadDesignsWithSource
+      ? adapter.loadDesignsWithSource()
+      : adapter.loadDesigns().then((designs) => ({ designs, source: "local-default" as CatalogueSource }));
+
+    loadPromise
       .then((result) => {
-        if (!cancelled) setDesigns(result);
+        if (!cancelled) {
+          setDesigns(result.designs);
+          setSource(result.source);
+        }
       })
       .catch(() => {
         if (!cancelled) setError("Could not load design catalogue.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
+        if (process.env.NODE_ENV !== "production") {
+          console.timeEnd("[BuilderPlus] design-catalogue-load");
+        }
       });
 
     return () => {
@@ -103,6 +119,11 @@ export function DesignResultsPanel({
         {tooLarge.length > 0 && (
           <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 font-medium text-red-700">
             {tooLarge.length} too large
+          </span>
+        )}
+        {source && source !== "local-default" && (
+          <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-gray-400">
+            Source: {source}
           </span>
         )}
       </div>

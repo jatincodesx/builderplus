@@ -16,12 +16,14 @@ export function SelectedPlotPanel({
   parcel,
   onClear,
   onPlaceDesign,
-  floorPlanOverlay
+  floorPlanOverlay,
+  placedDesignMatch
 }: {
   parcel: ParcelFeature;
   onClear: () => void;
   onPlaceDesign?: (match: DesignMatch) => void;
   floorPlanOverlay?: FloorPlanOverlayState | null;
+  placedDesignMatch?: DesignMatch | null;
 }) {
   const centroid = featureCentroid(parcel);
   const selectedPlot = createSelectedPlotFromParcel(parcel);
@@ -39,10 +41,6 @@ export function SelectedPlotPanel({
   const section = parcel.properties.section
     ? `Section ${parcel.properties.section}`
     : "N/A";
-
-  const activeDesignMatch = floorPlanOverlay?.designId
-    ? (undefined as DesignMatch | undefined)
-    : undefined;
 
   return (
     <motion.aside
@@ -128,10 +126,10 @@ export function SelectedPlotPanel({
         </div>
       )}
 
-      {floorPlanOverlay && floorPlanOverlay.designId && activeDesignMatch && (
+      {floorPlanOverlay && floorPlanOverlay.designId && placedDesignMatch && (
         <div className="mt-4">
           <DesignPlacementSummary
-            match={activeDesignMatch}
+            match={placedDesignMatch}
             placement={floorPlanOverlay}
           />
         </div>
