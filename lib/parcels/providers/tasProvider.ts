@@ -300,7 +300,14 @@ export class TasProvider implements ParcelProvider {
       label: this.label,
       capabilities: CAPABILITIES,
       configured,
-      live
+      live,
+      status: live ? "working" : configured ? "partial" : "stub",
+      supportsAddressSearch: true,
+      supportsSuburbSearch: true,
+      supportsParcelByPoint: true,
+      supportsBbox: true,
+      sourceUrl: TAS_CADASTRE_URL,
+      notes: live ? "Full functionality via PROP_ADD field" : "TAS LIST endpoint unreachable or not configured"
     };
   }
 }

@@ -1,4 +1,6 @@
 import type { Feature, FeatureCollection, Geometry } from "geojson";
+import type { BBox } from "@/types/geo";
+import type { LngLat } from "@/types/geo";
 
 export type ArcgisField = {
   name: string;
@@ -281,6 +283,137 @@ export function configuredUrlStatus(url: string, live: boolean) {
     configured: hasConfiguredUrl(url),
     live
   };
+}
+
+export function safeNumber(value: unknown, fallback?: number): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value.replaceAll(",", "").trim());
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
+export function safeString(value: unknown, fallback = ""): string {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return fallback;
+}
+
+export function queryArcgisLayer(
+  serviceUrl: string,
+  where: string,
+  extra?: Record<string, string>,
+  providerLabel = "ArcGIS"
+) {
+  return fetchArcgisGeoJson(
+    serviceUrl,
+    new URLSearchParams({
+      where,
+      outFields: "*",
+      returnGeometry: "true",
+      outSR: "4326",
+      f: "geojson",
+      ...extra
+    }),
+    providerLabel
+  );
+}
+
+export async function queryArcgisByPoint(
+  serviceUrl: string,
+  lat: number,
+  lng: number,
+  providerLabel = "ArcGIS",
+  maxResults = 1
+) {
+  const params = new URLSearchParams({
+    where: "1=1",
+    outFields: "*",
+    returnGeometry: "true",
+    outSR: "4326",
+    f: "geojson",
+    geometry: `${lng},${lat}`,
+    geometryType: "esriGeometryPoint",
+    inSR: "4326",
+    spatialRel: "esriSpatialRelIntersects",
+    resultRecordCount: String(maxResults)
+  });
+  return fetchArcgisGeoJson(serviceUrl, params, providerLabel);
+}
+
+export async function queryArcgisByBbox(
+  serviceUrl: string,
+  bbox: BBox,
+  providerLabel = "ArcGIS",
+  where = "1=1"
+) {
+  const params = new URLSearchParams({
+    where,
+    outFields: "*",
+    returnGeometry: "true",
+    outSR: "4326",
+    f: "geojson",
+    geometry: bbox.join(","),
+    geometryType: "esriGeometryEnvelope",
+    inSR: "4326",
+    spatialRel: "esriSpatialRelIntersects"
+  });
+  return fetchArcgisGeoJson(serviceUrl, params, providerLabel);
+}
+
+export async function searchArcgisTextFields(
+  serviceUrl: string,
+  fieldHints: string[],
+  query: string,
+  providerLabel = "ArcGIS",
+  resultRecordCount = 10
+) {
+  const metadata = await fetchMetadata(serviceUrl, providerLabel);
+  const searchFields = uniqueFields(
+    findLikelyFields(metadata.fields, fieldHints),
+    existingFields(metadata.fields, fieldHints)
+  );
+  if (!searchFields.length) return { features: [] as Feature[], searchFields: [] as string[] };
+
+  const params = new URLSearchParams({
+    where: buildLikeWhere(searchFields, query, providerLabel),
+    outFields: "*",
+    returnGeometry: "true",
+    outSR: "4326",
+    f: "geojson",
+    resultRecordCount: String(resultRecordCount)
+  });
+  const response = await fetchArcgisGeoJson(serviceUrl, params, providerLabel);
+  return {
+    features: featuresFromResponse(response),
+    searchFields
+  };
+}
+
+export function normaliseArcgisCentroid(feature: Feature): LngLat | null {
+  if (!feature.geometry) return null;
+  if (feature.geometry.type === "Point") {
+    const coords = feature.geometry.coordinates;
+    return { lng: coords[0], lat: coords[1] };
+  }
+  if (feature.geometry.type === "Polygon") {
+    const coords = feature.geometry.coordinates[0];
+    if (coords && coords.length > 0) {
+      const sumLng = coords.reduce((s, c) => s + c[0], 0);
+      const sumLat = coords.reduce((s, c) => s + c[1], 0);
+      return { lng: sumLng / coords.length, lat: sumLat / coords.length };
+    }
+  }
+  if (feature.geometry.type === "MultiPolygon") {
+    const coords = feature.geometry.coordinates[0]?.[0];
+    if (coords && coords.length > 0) {
+      const sumLng = coords.reduce((s, c) => s + c[0], 0);
+      const sumLat = coords.reduce((s, c) => s + c[1], 0);
+      return { lng: sumLng / coords.length, lat: sumLat / coords.length };
+    }
+  }
+  return null;
 }
 
 export { hasConfiguredUrl };

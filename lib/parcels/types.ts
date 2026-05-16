@@ -17,6 +17,13 @@ export type ProviderStatus = {
   capabilities: ProviderCapability[];
   configured: boolean;
   live: boolean;
+  status: "working" | "partial" | "stub" | "error";
+  supportsAddressSearch: boolean;
+  supportsSuburbSearch: boolean;
+  supportsParcelByPoint: boolean;
+  supportsBbox: boolean;
+  sourceUrl: string;
+  notes: string;
 };
 
 export interface ParcelProvider {

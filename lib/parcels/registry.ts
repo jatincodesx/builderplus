@@ -47,17 +47,26 @@ export function getAllProviders(): ParcelProvider[] {
 }
 
 export async function getAllProviderStatuses(): Promise<ProviderStatus[]> {
+  const allProviders = getAllProviders();
   const results = await Promise.allSettled(
-    getAllProviders().map((provider) => provider.getStatus())
+    allProviders.map((provider) => provider.getStatus())
   );
   return results.map((result, index) => {
+    const provider = allProviders[index];
     if (result.status === "fulfilled") return result.value;
     return {
-      id: getAllProviders()[index].id,
-      label: getAllProviders()[index].label,
-      capabilities: getAllProviders()[index].capabilities,
+      id: provider.id,
+      label: provider.label,
+      capabilities: provider.capabilities,
       configured: false,
-      live: false
+      live: false,
+      status: "error" as const,
+      supportsAddressSearch: provider.capabilities.includes("address-search"),
+      supportsSuburbSearch: provider.capabilities.includes("suburb-search"),
+      supportsParcelByPoint: provider.capabilities.includes("parcel-by-point"),
+      supportsBbox: provider.capabilities.includes("parcel-by-bbox"),
+      sourceUrl: "",
+      notes: "Provider getStatus() failed"
     };
   });
 }

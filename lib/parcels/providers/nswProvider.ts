@@ -1,5 +1,5 @@
 import type { Feature } from "geojson";
-import { featureBbox } from "@/lib/geometry";
+import { featureBbox, featureCentroid } from "@/lib/geometry";
 import {
   attrString,
   buildEqualsWhere,
@@ -11,6 +11,8 @@ import {
   findLikelyFields,
   hasConfiguredUrl,
   isPolygonFeature,
+  queryArcgisByBbox,
+  queryArcgisByPoint,
   uniqueFields
 } from "@/lib/parcels/arcgisShared";
 import type { ParcelProvider, ProviderCapability, ProviderStatus } from "@/lib/parcels/types";
@@ -28,12 +30,18 @@ const NSW_CADASTRE_URL =
   process.env.NSW_CADASTRE_URL ??
   "https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_Cadastre/MapServer/9";
 
+const NSW_SUBURB_URL =
+  process.env.NSW_SUBURB_URL ??
+  "https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_Administrative_Boundaries/MapServer/0";
+
 const SUBURB_FIELD_HINTS = ["LOCALITY", "SUBURB", "DIVISION", "NAME"];
 const ADDRESS_FIELD_HINTS = ["ADDRESS", "PROP_ADD", "FULL", "STREET", "LOCALITY"];
-const ID_FIELDS = ["OBJECTID", "FEATUREID", "ID", "GlobalID"];
-const DIVISION_FIELDS = ["LOCALITY", "SUBURB", "DIVISION_NAME", "DIVISION"];
+const ID_FIELDS = ["OBJECTID", "FEATUREID", "ID", "GlobalID", "RID"];
+const DIVISION_FIELDS = ["LOCALITY", "SUBURB", "DIVISION_NAME", "DIVISION", "SUBURBNAME"];
+const NSW_SUBURB_NAME_FIELDS = ["SUBURBNAME", "SUBURB_NAME", "NAME"];
 
 const CAPABILITIES: ProviderCapability[] = [
+  "suburb-search",
   "parcel-by-point",
   "parcel-by-suburb",
   "parcel-by-bbox"
@@ -88,6 +96,45 @@ export class NswProvider implements ParcelProvider {
   }
 
   async searchSuburb(query: string): Promise<SuburbSearchResult[]> {
+    if (hasConfiguredUrl(NSW_SUBURB_URL)) {
+      try {
+        const metadata = await fetchMetadata(NSW_SUBURB_URL, "NSW Suburbs");
+        const nameFields = uniqueFields(
+          findLikelyFields(metadata.fields, NSW_SUBURB_NAME_FIELDS),
+          existingFields(metadata.fields, NSW_SUBURB_NAME_FIELDS)
+        );
+        if (nameFields.length) {
+          const params = nswSearchParams(
+            buildLikeWhere(nameFields, query, "NSW Suburbs"),
+            { resultRecordCount: "8" }
+          );
+          const live = await fetchArcgisGeoJson(NSW_SUBURB_URL, params, "NSW Suburbs");
+          const results = featuresFromResponse(live)
+            .filter(isPolygonFeature)
+            .map((feature) => {
+              const attrs = (feature.properties ?? {}) as Record<string, unknown>;
+              const name = attrString(attrs, nameFields);
+              if (!name) return null;
+              const centroid = featureCentroid(feature);
+              const bbox = featureBbox(feature);
+              return {
+                id: `nsw-suburb-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+                name,
+                type: "suburb" as const,
+                bbox,
+                centroid,
+                geometry: feature.geometry as SuburbSearchResult["geometry"]
+              };
+            })
+            .filter((r): r is SuburbSearchResult => r !== null)
+            .slice(0, 8);
+          if (results.length) return results;
+        }
+      } catch (error) {
+        console.warn("NSW suburb boundary search failed.", error);
+      }
+    }
+
     if (!hasConfiguredUrl(NSW_CADASTRE_URL)) return [];
 
     try {
@@ -157,14 +204,7 @@ export class NswProvider implements ParcelProvider {
     if (!hasConfiguredUrl(NSW_CADASTRE_URL)) return null;
 
     try {
-      const params = nswSearchParams("1=1", {
-        geometry: `${lng},${lat}`,
-        geometryType: "esriGeometryPoint",
-        inSR: "4326",
-        spatialRel: "esriSpatialRelIntersects",
-        resultRecordCount: "1"
-      });
-      const live = await fetchArcgisGeoJson(NSW_CADASTRE_URL, params, "NSW Cadastre");
+      const live = await queryArcgisByPoint(NSW_CADASTRE_URL, lat, lng, "NSW Cadastre");
       const feature = featuresFromResponse(live).filter(isPolygonFeature)[0];
       return feature ? normaliseNswParcel(feature) : null;
     } catch (error) {
@@ -215,13 +255,7 @@ export class NswProvider implements ParcelProvider {
     }
 
     try {
-      const params = nswSearchParams("1=1", {
-        geometry: bbox.join(","),
-        geometryType: "esriGeometryEnvelope",
-        inSR: "4326",
-        spatialRel: "esriSpatialRelIntersects"
-      });
-      const live = await fetchArcgisGeoJson(NSW_CADASTRE_URL, params, "NSW Cadastre");
+      const live = await queryArcgisByBbox(NSW_CADASTRE_URL, bbox, "NSW Cadastre");
       const features = featuresFromResponse(live)
         .filter(isPolygonFeature)
         .map(normaliseNswParcel);
@@ -256,7 +290,14 @@ export class NswProvider implements ParcelProvider {
       label: this.label,
       capabilities: CAPABILITIES,
       configured,
-      live
+      live,
+      status: live ? "working" : configured ? "partial" : "stub",
+      supportsAddressSearch: false,
+      supportsSuburbSearch: true,
+      supportsParcelByPoint: true,
+      supportsBbox: true,
+      sourceUrl: NSW_CADASTRE_URL,
+      notes: live ? "Parcel and suburb search confirmed; no public address API" : "NSW Cadastre endpoint unreachable or not configured"
     };
   }
 }

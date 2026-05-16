@@ -252,9 +252,9 @@ export function SearchPanel({
                 </button>
               ))}
               {emptyActOnly && (
-                <p className="p-3 text-sm text-gray-500">
-                  BuilderPlus currently supports ACT, NSW & TAS blocks. Use manual draw for other states.
-                </p>
+                  <p className="p-3 text-sm text-gray-500">
+                  Live parcel data: ACT, NSW &amp; TAS. Other states: set endpoint or use manual draw.
+                  </p>
               )}
               {error && <p className="p-3 text-sm text-red-600">{error}</p>}
             </motion.div>

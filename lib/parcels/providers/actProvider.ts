@@ -65,7 +65,14 @@ export class ActProvider implements ParcelProvider {
       label: this.label,
       capabilities: CAPABILITIES,
       configured,
-      live
+      live,
+      status: live ? "working" : configured ? "partial" : "error",
+      supportsAddressSearch: true,
+      supportsSuburbSearch: true,
+      supportsParcelByPoint: true,
+      supportsBbox: true,
+      sourceUrl: "https://data.actmapi.act.gov.au/arcgis/rest/services",
+      notes: live ? "Full functionality confirmed" : configured ? "Configured but endpoint unreachable" : "ACTmapi URLs not configured"
     };
   }
 }
