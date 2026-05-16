@@ -3,19 +3,49 @@ import type { GeoJSON } from "geojson";
 export type HouseDesign = {
   id: string;
   name: string;
-  imageUrl: string;
-  widthM?: number;
-  depthM?: number;
-  floorAreaSqm?: number;
-  bedrooms?: number;
-  bathrooms?: number;
-  garageSpaces?: number;
-  minLotWidthM?: number;
-  minLotDepthM?: number;
+  slug?: string;
+  builderName?: string;
+  description?: string;
+  floorAreaSqm: number;
+  widthM?: number | null;
+  depthM?: number | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  garageSpaces?: number | null;
+  storeys?: number | null;
+  minLotWidthM?: number | null;
+  minLotDepthM?: number | null;
+  thumbnailUrl?: string | null;
+  floorPlanImageUrl?: string | null;
+  facadeImageUrl?: string | null;
+  detailsUrl?: string | null;
+  tags?: string[];
+  source?: "local_demo" | "brickbrick_export" | "brickbrick_api";
+  raw?: Record<string, unknown>;
+  imageUrl?: string;
   footprint?: GeoJSON.Polygon | GeoJSON.MultiPolygon | null;
 };
 
-export type DesignPlacementMode = "uploaded-image" | "backend-design";
+export type FitStatus =
+  | "best_fit"
+  | "may_fit"
+  | "too_large"
+  | "insufficient_data";
+
+export type DesignMatch = {
+  design: HouseDesign;
+  status: FitStatus;
+  score: number;
+  reasons: string[];
+  warnings: string[];
+  checks: {
+    areaFits: boolean | null;
+    widthFits: boolean | null;
+    depthFits: boolean | null;
+  };
+};
+
+export type DesignPlacementMode = "real_size_design" | "uploaded-image" | "backend-design";
 
 export type DesignFitStatus =
   | "visual-placement-only"
@@ -33,8 +63,11 @@ export type DesignPlacementState = {
   scale: number;
   opacity: number;
   locked: boolean;
-  widthM?: number;
-  depthM?: number;
-  floorAreaSqm?: number;
+  widthM?: number | null;
+  depthM?: number | null;
+  floorAreaSqm?: number | null;
   placementMode: DesignPlacementMode;
+  scaleAdjustment?: number;
 };
+
+export type BrickBrickDesignRecord = Record<string, unknown>;

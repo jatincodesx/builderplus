@@ -15,10 +15,11 @@ export type FloorPlanOverlayState = {
   };
   locked: boolean;
   designId?: string;
-  widthM?: number;
-  depthM?: number;
-  floorAreaSqm?: number;
+  widthM?: number | null;
+  depthM?: number | null;
+  floorAreaSqm?: number | null;
   placementMode: DesignPlacementMode;
+  scaleAdjustment?: number;
 };
 
 export type FloorPlanUploadPayload = {

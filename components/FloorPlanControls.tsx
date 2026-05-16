@@ -42,6 +42,10 @@ export function FloorPlanControls({
 
   const scalePercent = Math.round(overlay.scale * 100);
 
+  const isRealSize = overlay.placementMode === "real_size_design";
+  const scaleAdjustment = overlay.scaleAdjustment ?? 1;
+  const conceptScalePercent = Math.round(scaleAdjustment * 100);
+
   const fitStatus = getDesignFitStatus(overlay, selectedPlotAreaSqm);
   const fitLabel = fitStatusLabel(fitStatus);
 
@@ -56,7 +60,7 @@ export function FloorPlanControls({
             {overlay.fileName ?? "Design overlay"}
           </p>
           <p className="mt-1 text-xs text-gray-400">
-            Scale: {scalePercent}%
+            {isRealSize ? `Concept scale: ${conceptScalePercent}%` : `Scale: ${scalePercent}%`}
           </p>
         </div>
         <Button
@@ -88,55 +92,124 @@ export function FloorPlanControls({
         />
       </label>
 
-      <div className="grid grid-cols-4 gap-2">
-        <Button
-          type="button"
-          size="icon"
-          variant="secondary"
-          title="Scale smaller"
-          onClick={() => scaleBy(-0.08)}
-        >
-          <ZoomOut className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          size="icon"
-          variant="secondary"
-          title="Scale larger"
-          onClick={() => scaleBy(0.08)}
-        >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          size="icon"
-          variant="secondary"
-          title="Rotate left"
-          onClick={() => update({ rotation: overlay.rotation - 5 })}
-        >
-          <RotateCcw className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          size="icon"
-          variant="secondary"
-          title="Rotate right"
-          onClick={() => update({ rotation: overlay.rotation + 5 })}
-        >
-          <RotateCw className="h-4 w-4" />
-        </Button>
-      </div>
+      {isRealSize ? (
+        <div className="space-y-2">
+          <label className="grid gap-2 text-xs font-medium uppercase tracking-[0.12em] text-gray-400">
+            Concept scale adjustment
+            <input
+              type="range"
+              min={50}
+              max={150}
+              value={Math.round(scaleAdjustment * 100)}
+              onChange={(event) =>
+                update({ scaleAdjustment: Number(event.target.value) / 100 })
+              }
+              className="accent-blue-500"
+            />
+          </label>
+          <p className="text-[11px] text-gray-400">
+            Scaled preview: {conceptScalePercent}%
+          </p>
+          {(conceptScalePercent < 90 || conceptScalePercent > 110) && (
+            <p className="text-[11px] text-amber-700">
+              Large scale changes may require redesign.
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-4 gap-2">
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            title="Scale smaller"
+            onClick={() => scaleBy(-0.08)}
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            title="Scale larger"
+            onClick={() => scaleBy(0.08)}
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            title="Rotate left"
+            onClick={() => update({ rotation: (overlay.rotation ?? 0) - 5 })}
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            title="Rotate right"
+            onClick={() => update({ rotation: (overlay.rotation ?? 0) + 5 })}
+          >
+            <RotateCw className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button type="button" variant="ghost" onClick={onReset}>
-          <RotateCcw className="h-4 w-4" />
-          Reset 100%
-        </Button>
-        <Button type="button" variant="secondary" onClick={onFitToPlot}>
-          <Maximize2 className="h-4 w-4" />
-          Fit to plot
-        </Button>
-      </div>
+      {!isRealSize && (
+        <div className="grid grid-cols-2 gap-2">
+          <Button type="button" variant="ghost" onClick={onReset}>
+            <RotateCcw className="h-4 w-4" />
+            Reset 100%
+          </Button>
+          <Button type="button" variant="secondary" onClick={onFitToPlot}>
+            <Maximize2 className="h-4 w-4" />
+            Fit to plot
+          </Button>
+        </div>
+      )}
+
+      {isRealSize && (
+        <div className="grid grid-cols-4 gap-2">
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            title="Rotate left"
+            onClick={() => update({ rotation: (overlay.rotation ?? 0) - 5 })}
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            title="Rotate right"
+            onClick={() => update({ rotation: (overlay.rotation ?? 0) + 5 })}
+          >
+            <RotateCw className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            title="Reset placement"
+            onClick={onReset}
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="danger"
+            title="Remove"
+            onClick={onRemove}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-400">
@@ -163,16 +236,18 @@ export function FloorPlanControls({
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button type="button" variant="ghost" onClick={onReset}>
-          <RotateCcw className="h-4 w-4" />
-          Reset
-        </Button>
-        <Button type="button" variant="danger" onClick={onRemove}>
-          <Trash2 className="h-4 w-4" />
-          Remove
-        </Button>
-      </div>
+      {!isRealSize && (
+        <div className="grid grid-cols-2 gap-2">
+          <Button type="button" variant="ghost" onClick={onReset}>
+            <RotateCcw className="h-4 w-4" />
+            Reset
+          </Button>
+          <Button type="button" variant="danger" onClick={onRemove}>
+            <Trash2 className="h-4 w-4" />
+            Remove
+          </Button>
+        </div>
+      )}
 
       <p className="text-xs leading-relaxed text-gray-400">
         Approximate visual overlay only. Not a surveyed or approval-ready
