@@ -1,5 +1,6 @@
 import type { HouseDesign } from "@/types/design";
 import { loadLocalDesignCatalogue } from "./localCatalogue";
+import { DESIGN_CATALOGUE_URL, loadS3DesignCatalogue } from "./s3Catalogue";
 
 export type DesignCatalogueAdapter = {
   id: string;
@@ -11,6 +12,12 @@ export const localDemoCatalogueAdapter: DesignCatalogueAdapter = {
   id: "local_demo",
   label: "Local demo catalogue",
   loadDesigns: loadLocalDesignCatalogue
+};
+
+export const s3CatalogueAdapter: DesignCatalogueAdapter = {
+  id: "s3_catalogue",
+  label: "S3 design catalogue",
+  loadDesigns: loadS3DesignCatalogue
 };
 
 // TODO: BrickBrick JSON export adapter
@@ -61,5 +68,9 @@ export const localDemoCatalogueAdapter: DesignCatalogueAdapter = {
 // }
 
 export function getActiveAdapter(): DesignCatalogueAdapter {
+  if (DESIGN_CATALOGUE_URL) {
+    return s3CatalogueAdapter;
+  }
+
   return localDemoCatalogueAdapter;
 }

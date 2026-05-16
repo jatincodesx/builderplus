@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320" role="img" aria-label="Derwent 24 thumbnail placeholder">
+  <rect width="480" height="320" fill="#f7f8f6"/>
+  <rect x="0" y="226" width="480" height="94" fill="#dfe9dd"/>
+  <path d="M52 158 L238 68 L428 158 Z" fill="#315c48"/>
+  <rect x="76" y="156" width="328" height="94" rx="8" fill="#fff" stroke="#cbd3d9" stroke-width="2"/>
+  <rect x="106" y="188" width="68" height="62" rx="3" fill="#d9dee4"/>
+  <rect x="206" y="184" width="58" height="40" rx="4" fill="#9ec5d6"/>
+  <rect x="296" y="180" width="72" height="70" rx="4" fill="#c9a663" opacity="0.92"/>
+  <rect x="74" y="250" width="332" height="10" fill="#315c48" opacity="0.86"/>
+  <text x="26" y="42" font-family="Inter, Arial, sans-serif" font-size="25" fill="#1f2933">Derwent 24</text>
+  <text x="28" y="68" font-family="Inter, Arial, sans-serif" font-size="14" fill="#53606a">4 bed - 2 bath - 2 car</text>
+</svg>
