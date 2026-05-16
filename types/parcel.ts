@@ -1,6 +1,16 @@
 import type { GeoFeature, GeoFeatureCollection, LngLat } from "@/types/geo";
 
-export type ParcelSource = "ACTmapi" | "mock" | "User drawn";
+export type ParcelSource =
+  | "ACTmapi"
+  | "NSW_Cadastre"
+  | "TAS_LIST"
+  | "VIC_DataVic"
+  | "QLD_Cadastre"
+  | "SA_Location"
+  | "WA_SLIP"
+  | "NT_Geoserver"
+  | "mock"
+  | "User drawn";
 
 export type ParcelClassification =
   | "selectable-residential"
@@ -9,6 +19,8 @@ export type ParcelClassification =
   | "road-or-utility"
   | "manual-plot"
   | "unknown";
+
+export type JurisdictionCode = "ACT" | "NSW" | "VIC" | "QLD" | "SA" | "WA" | "TAS" | "NT";
 
 export type ParcelProperties = {
   id: string;
@@ -24,6 +36,7 @@ export type ParcelProperties = {
   classification?: ParcelClassification;
   selectable?: boolean;
   source: ParcelSource;
+  jurisdiction?: JurisdictionCode;
   rawProperties?: Record<string, unknown>;
   fallbackReason?: string;
   isManual?: boolean;

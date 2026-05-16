@@ -30,9 +30,15 @@ export function SelectedPlotPanel({
   const sourceLabel =
     parcel.properties.source === "ACTmapi"
       ? "ACTmapi live data"
-      : parcel.properties.source === "User drawn"
-        ? "User drawn"
-        : "Development fallback data";
+      : parcel.properties.source === "NSW_Cadastre"
+        ? "NSW Cadastre"
+        : parcel.properties.source === "TAS_LIST"
+          ? "theLIST (TAS)"
+          : parcel.properties.source === "User drawn"
+            ? "User drawn"
+            : parcel.properties.source === "mock"
+              ? "Development fallback data"
+              : parcel.properties.source;
   const address =
     parcel.properties.address ||
     rawString(parcel.properties.rawProperties?.ADDRESSES) ||
@@ -95,7 +101,7 @@ export function SelectedPlotPanel({
             Approximate user-drawn plot
           </p>
           <p className="mt-2 text-sm leading-relaxed text-amber-700">
-            This is an approximate user-drawn plot and is not an official ACT
+            This is an approximate user-drawn plot and is not an official
             cadastral boundary.
           </p>
           {parcel.properties.areaSqm != null && (

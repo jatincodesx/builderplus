@@ -1,6 +1,43 @@
 # BuilderPlus
 
-BuilderPlus is a production-quality MVP foundation for selecting ACT residential blocks, starting with Canberra. It gives users a premium map-first flow for searching ACT suburbs or addresses, zooming to the location, hovering parcels, selecting a block, and reviewing early plot details.
+BuilderPlus is a production-quality MVP foundation for selecting Australian residential blocks, starting with ACT. It gives users a premium map-first flow for searching suburbs or addresses, zooming to the location, hovering parcels, selecting a block, and reviewing early plot details.
+
+## National Parcel Support
+
+BuilderPlus supports parcel data across all Australian states and territories via a pluggable provider architecture:
+
+| State | Provider | Status | Capabilities |
+|-------|----------|--------|-------------|
+| ACT | ACTmapi | **Working** | Full (address, suburb, parcel, bbox) |
+| NSW | SIX Maps Cadastre | **Working** | Parcel geometry, suburb, bbox (no address search) |
+| TAS | theLIST (DPIPWE) | **Working** | Full (address, suburb, parcel, bbox) |
+| VIC | Data.Vic / Vicmap | Stub | Requires authenticated endpoint |
+| QLD | QSpatial / DNRME | Stub | Endpoints intermittently available |
+| SA | Location SA | Stub | Requires authenticated endpoint |
+| WA | SLIP | Stub | Requires free-tier account |
+| NT | NT Geoserver | Stub | Intermittently available |
+
+Manual draw remains the universal fallback for all jurisdictions.
+
+### Parcel Provider Architecture
+
+```
+lib/parcels/
+  types.ts          — Jurisdiction, provider interfaces, inference utilities
+  registry.ts       — Provider selection by jurisdiction
+  arcgisShared.ts   — Shared ArcGIS REST utilities (fetch, normalise, field discovery)
+  providers/
+    actProvider.ts   — Wraps existing ACTmapi implementation
+    nswProvider.ts   — SIX Maps Cadastre (ArcGIS REST)
+    tasProvider.ts   — theLIST (ArcGIS REST)
+    vicProvider.ts   — Stub (Data.Vic)
+    qldProvider.ts   — Stub (QSpatial)
+    saProvider.ts    — Stub (Location SA)
+    waProvider.ts    — Stub (SLIP)
+    ntProvider.ts    — Stub (NT Geoserver)
+```
+
+The UI does not know which provider is being used. The registry selects the correct provider based on jurisdiction parameter, coordinate inference, or text inference.
 
 ## Setup
 
@@ -49,6 +86,23 @@ ACTMAPI_DIVISION_URL=
 ACTMAPI_ADDRESSES_URL=
 ```
 
+### National Provider URLs
+
+```bash
+# NSW Cadastre (SIX Maps) — public, no auth required
+NSW_CADASTRE_URL=
+# TAS theLIST — public, no auth required
+TAS_CADASTRE_URL=
+# Other states — require auth or are stubs
+VIC_CADASTRE_URL=
+QLD_CADASTRE_URL=
+SA_CADASTRE_URL=
+WA_CADASTRE_URL=
+NT_CADASTRE_URL=
+# Default jurisdiction (ACT if not set)
+DEFAULT_JURISDICTION=ACT
+```
+
 Required conceptual datasets:
 
 - `ACTGOV DIVISION`: suburb/division boundaries and names for suburb search and map zooming.
@@ -92,6 +146,7 @@ app/
     search-suburb/route.ts
     search-address/route.ts
     debug/actmapi/route.ts
+    debug/providers/route.ts
     parcels/by-suburb/route.ts
     parcels/by-point/route.ts
     parcels/by-bbox/route.ts
@@ -114,11 +169,26 @@ lib/
   geojson.ts
   mockData.ts
   geometry.ts
+  parcelFilters.ts
+  parcels/
+    types.ts
+    registry.ts
+    arcgisShared.ts
+    providers/
+      actProvider.ts
+      nswProvider.ts
+      tasProvider.ts
+      vicProvider.ts
+      qldProvider.ts
+      saProvider.ts
+      waProvider.ts
+      ntProvider.ts
 types/
   floorPlan.ts
   geo.ts
   manualPlot.ts
   parcel.ts
+  plot.ts
   search.ts
 ```
 

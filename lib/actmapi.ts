@@ -330,7 +330,7 @@ function normaliseParcel(
   return {
     type: "Feature",
     id: properties.id,
-    properties,
+    properties: { ...properties, jurisdiction: "ACT" as const },
     geometry: feature.geometry
   };
 }

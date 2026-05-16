@@ -6,6 +6,7 @@ export type SelectedPlot = {
   id: string;
   source: PlotSource;
   state?: string;
+  jurisdiction?: string;
   address?: string | null;
   suburb?: string | null;
   division?: string | null;

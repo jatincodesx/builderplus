@@ -63,6 +63,7 @@ export function createSelectedPlotFromParcel(parcel: ParcelFeature): SelectedPlo
   return {
     id: parcel.properties.id,
     source,
+    jurisdiction: parcel.properties.jurisdiction ?? undefined,
     address: parcel.properties.address ?? null,
     division: parcel.properties.division ?? null,
     block: parcel.properties.block ?? null,

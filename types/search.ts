@@ -28,7 +28,7 @@ export type AddressSearchResult = {
   zone?: string;
   lifecycle?: string;
   geometry?: PolygonGeometry;
-  source?: "ACTmapi-block-address";
+  source?: string;
   selectable?: boolean;
 };
 

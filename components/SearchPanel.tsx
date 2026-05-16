@@ -115,14 +115,13 @@ export function SearchPanel({
       compact
         ? {
             eyebrow: "BuilderPlus",
-            title: "Find an ACT block",
-            sub: activeLabel ?? "Search Canberra suburbs or addresses."
+            title: "Find a block",
+            sub: activeLabel ?? "Search suburbs or addresses across Australia."
           }
         : {
             eyebrow: "BuilderPlus",
-            title: "Design smarter on your ACT block.",
-            sub: "Search Canberra suburbs and addresses, then select a parcel to start an early feasibility view."
-
+            title: "Design smarter on your block.",
+            sub: "Search suburbs and addresses, then select a parcel to start an early feasibility view."
           },
     [activeLabel, compact]
   );
@@ -197,7 +196,7 @@ export function SearchPanel({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search an ACT suburb or address"
+            placeholder="Search a suburb or address"
             className="h-14 w-full rounded-full border border-gray-200 bg-white pl-12 pr-12 text-base text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
           />
           {loading ? (
@@ -254,7 +253,7 @@ export function SearchPanel({
               ))}
               {emptyActOnly && (
                 <p className="p-3 text-sm text-gray-500">
-                  BuilderPlus currently supports ACT blocks only.
+                  BuilderPlus currently supports ACT, NSW & TAS blocks. Use manual draw for other states.
                 </p>
               )}
               {error && <p className="p-3 text-sm text-red-600">{error}</p>}
