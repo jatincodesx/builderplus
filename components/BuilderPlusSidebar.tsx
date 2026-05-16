@@ -19,20 +19,23 @@ import { FloorPlanUploadButton } from "@/components/FloorPlanUploadButton";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ALL_JURISDICTIONS, JURISDICTION_LABELS } from "@/lib/parcels/types";
+import type { Jurisdiction } from "@/lib/parcels/types";
 import type { FloorPlanOverlayState, FloorPlanUploadPayload } from "@/types/floorPlan";
 import type { ParcelFeature } from "@/types/parcel";
 import type { SearchResult } from "@/types/search";
 import type { BasemapId } from "@/lib/mapConfig";
 
-const quickSuburbs = [
-  "Denman Prospect",
-  "Coombs",
-  "Whitlam",
-  "Taylor",
-  "Wright",
-  "Gungahlin",
-  "Belconnen"
-];
+const QUICK_SUBURBS_BY_JURISDICTION: Record<Jurisdiction, string[]> = {
+  ACT: ["Denman Prospect", "Coombs", "Whitlam", "Taylor", "Wright", "Gungahlin", "Belconnen"],
+  NSW: ["Sydney CBD", "Parramatta", "Newcastle", "Wollongong", "Byron Bay"],
+  VIC: ["Melbourne CBD", "South Yarra", "Richmond", "Footscray"],
+  QLD: ["Brisbane CBD", "South Bank", "Surfers Paradise", "Cairns"],
+  SA: ["Adelaide CBD", "Glenelg", "Norwood"],
+  WA: ["Perth CBD", "Fremantle", "Subiaco"],
+  TAS: ["Hobart CBD", "Sandy Bay", "Launceston"],
+  NT: ["Darwin CBD", "Palmerston"]
+};
 
 type SearchResponse<T> = {
   results: T[];
@@ -50,6 +53,8 @@ export function BuilderPlusSidebar({
   activeBasemap,
   autoSatellite,
   manualBasemapOverride,
+  activeJurisdiction,
+  onJurisdictionChange,
   onStartManualPlot,
   onSelectResult,
   onUploadFloorPlan,
@@ -69,6 +74,8 @@ export function BuilderPlusSidebar({
   activeBasemap: BasemapId;
   autoSatellite: boolean;
   manualBasemapOverride: boolean;
+  activeJurisdiction: Jurisdiction;
+  onJurisdictionChange: (jurisdiction: Jurisdiction) => void;
   onStartManualPlot: () => void;
   onSelectResult: (result: SearchResult) => void;
   onUploadFloorPlan: (payload: FloorPlanUploadPayload) => void;
@@ -86,8 +93,9 @@ export function BuilderPlusSidebar({
   const [error, setError] = useState("");
 
   const hasLocation = Boolean(activeLocation || manualDrawActive);
-  const emptyActOnly =
+  const emptyResults =
     searched && query.trim().length > 2 && !loading && !results.length && !error;
+  const quickSuburbs = QUICK_SUBURBS_BY_JURISDICTION[activeJurisdiction] ?? QUICK_SUBURBS_BY_JURISDICTION.ACT;
 
   useEffect(() => {
     const value = query.trim();
@@ -105,10 +113,10 @@ export function BuilderPlusSidebar({
       setLoading(true);
       try {
         const [suburbResponse, addressResponse] = await Promise.all([
-          fetch(`/api/search-suburb?q=${encodeURIComponent(value)}`, {
+          fetch(`/api/search-suburb?q=${encodeURIComponent(value)}&jurisdiction=${activeJurisdiction}`, {
             signal: controller.signal
           }),
-          fetch(`/api/search-address?q=${encodeURIComponent(value)}`, {
+          fetch(`/api/search-address?q=${encodeURIComponent(value)}&jurisdiction=${activeJurisdiction}`, {
             signal: controller.signal
           })
         ]);
@@ -139,20 +147,20 @@ export function BuilderPlusSidebar({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [query]);
+  }, [query, activeJurisdiction]);
 
   const titleCopy = useMemo(
     () =>
       hasLocation
         ? {
-            title: "Find an ACT block",
-            sub: activeLabel ?? "Search Canberra suburbs or addresses."
+            title: "Find a block",
+            sub: activeLabel ?? `Search ${JURISDICTION_LABELS[activeJurisdiction]} suburbs or addresses.`
           }
         : {
-            title: "Design smarter on your ACT block.",
-            sub: "Search Canberra suburbs and addresses, then select a parcel to start an early feasibility view."
+            title: "Design smarter on your block.",
+            sub: "Search suburbs and addresses, then select a parcel to start an early feasibility view."
           },
-    [activeLabel, hasLocation]
+    [activeLabel, hasLocation, activeJurisdiction]
   );
 
   async function selectQuickSuburb(name: string) {
@@ -161,7 +169,7 @@ export function BuilderPlusSidebar({
     setError("");
     try {
       const response = await fetch(
-        `/api/search-suburb?q=${encodeURIComponent(name)}`
+        `/api/search-suburb?q=${encodeURIComponent(name)}&jurisdiction=${activeJurisdiction}`
       );
       const json = (await response.json()) as SearchResponse<SearchResult>;
       const result = json.results.find(
@@ -222,12 +230,33 @@ export function BuilderPlusSidebar({
             </p>
           </div>
 
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="jurisdiction-select"
+              className="text-xs font-medium uppercase tracking-[0.12em] text-gray-400"
+            >
+              State
+            </label>
+            <select
+              id="jurisdiction-select"
+              value={activeJurisdiction}
+              onChange={(e) => onJurisdictionChange(e.target.value as Jurisdiction)}
+              className="h-9 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
+            >
+              {ALL_JURISDICTIONS.map((j) => (
+                <option key={j} value={j}>
+                  {j} — {JURISDICTION_LABELS[j]}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search an ACT suburb or address"
+              placeholder="Search a suburb or address"
               className="h-12 w-full rounded-full border border-gray-200 bg-white pl-12 pr-12 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
             />
             {loading ? (
@@ -247,7 +276,7 @@ export function BuilderPlusSidebar({
           </div>
 
           <AnimatePresence>
-            {(results.length > 0 || emptyActOnly || error) && (
+            {(results.length > 0 || emptyResults || error) && (
               <motion.div
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -279,9 +308,9 @@ export function BuilderPlusSidebar({
                     </span>
                   </button>
                 ))}
-                {emptyActOnly && (
+                {emptyResults && (
                   <p className="p-3 text-sm text-gray-500">
-                    BuilderPlus currently supports ACT blocks only.
+                    No results found for {JURISDICTION_LABELS[activeJurisdiction]}. Try manual draw for other locations.
                   </p>
                 )}
                 {error && <p className="p-3 text-sm text-red-600">{error}</p>}

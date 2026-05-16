@@ -8,6 +8,8 @@ import { BuilderPlusMapDynamic as BuilderPlusMap } from "@/components/BuilderPlu
 import { BuilderPlusSidebar, SIDEBAR_WIDTH } from "@/components/BuilderPlusSidebar";
 import { SelectedPlotPanel } from "@/components/SelectedPlotPanel";
 import { createSelectedPlotFromParcel } from "@/lib/plot/plotAnalysis";
+import { getDefaultJurisdiction } from "@/lib/parcels/registry";
+import type { Jurisdiction } from "@/lib/parcels/types";
 import type {
   FloorPlanOverlayState,
   FloorPlanUploadPayload
@@ -37,6 +39,7 @@ function BuilderPlusApp() {
   const [manualDrawActive, setManualDrawActive] = useState(false);
   const [loadingParcels, setLoadingParcels] = useState(false);
   const [notice, setNotice] = useState("");
+  const [activeJurisdiction, setActiveJurisdiction] = useState<Jurisdiction>(getDefaultJurisdiction());
   const [activeBasemap, setActiveBasemap] = useState<BasemapId>("map");
   const [autoSatellite, setAutoSatellite] = useState(true);
   const [manualBasemapOverride, setManualBasemapOverride] = useState(false);
@@ -74,7 +77,7 @@ function BuilderPlusApp() {
 
   async function loadSuburbParcels(division: string) {
     const response = await fetch(
-      `/api/parcels/by-suburb?division=${encodeURIComponent(division)}`
+      `/api/parcels/by-suburb?division=${encodeURIComponent(division)}&jurisdiction=${activeJurisdiction}`
     );
     if (!response.ok) throw new Error("Parcel query failed");
     return (await response.json()) as ParcelFeatureCollection;
@@ -150,7 +153,7 @@ function BuilderPlusApp() {
       }
 
       const pointResponse = await fetch(
-        `/api/parcels/by-point?lat=${result.lat}&lng=${result.lng}`
+        `/api/parcels/by-point?lat=${result.lat}&lng=${result.lng}&jurisdiction=${activeJurisdiction}`
       );
       if (!pointResponse.ok) throw new Error("Point parcel query failed");
       const pointJson = (await pointResponse.json()) as {
@@ -337,6 +340,8 @@ function BuilderPlusApp() {
         activeBasemap={activeBasemap}
         autoSatellite={autoSatellite}
         manualBasemapOverride={manualBasemapOverride}
+        activeJurisdiction={activeJurisdiction}
+        onJurisdictionChange={setActiveJurisdiction}
         onStartManualPlot={startManualPlotDraw}
         onSelectResult={handleSelectResult}
         onUploadFloorPlan={handleFloorPlanUpload}
