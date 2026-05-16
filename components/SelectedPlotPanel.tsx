@@ -4,17 +4,27 @@ import { Bookmark, Compass, ExternalLink, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DesignResultsPanel } from "@/components/designs/DesignResultsPanel";
+import { DesignPlacementSummary } from "@/components/designs/DesignPlacementSummary";
+import { createSelectedPlotFromParcel } from "@/lib/plot/plotAnalysis";
 import { featureCentroid, formatCoordinate } from "@/lib/geometry";
 import type { ParcelFeature } from "@/types/parcel";
+import type { DesignMatch } from "@/types/design";
+import type { FloorPlanOverlayState } from "@/types/floorPlan";
 
 export function SelectedPlotPanel({
   parcel,
-  onClear
+  onClear,
+  onPlaceDesign,
+  floorPlanOverlay
 }: {
   parcel: ParcelFeature;
   onClear: () => void;
+  onPlaceDesign?: (match: DesignMatch) => void;
+  floorPlanOverlay?: FloorPlanOverlayState | null;
 }) {
   const centroid = featureCentroid(parcel);
+  const selectedPlot = createSelectedPlotFromParcel(parcel);
   const sourceLabel =
     parcel.properties.source === "ACTmapi"
       ? "ACTmapi live data"
@@ -29,6 +39,10 @@ export function SelectedPlotPanel({
   const section = parcel.properties.section
     ? `Section ${parcel.properties.section}`
     : "N/A";
+
+  const activeDesignMatch = floorPlanOverlay?.designId
+    ? (undefined as DesignMatch | undefined)
+    : undefined;
 
   return (
     <motion.aside
@@ -69,6 +83,12 @@ export function SelectedPlotPanel({
           label="Centroid"
           value={`${formatCoordinate(centroid.lat)}, ${formatCoordinate(centroid.lng)}`}
         />
+        {selectedPlot.approxWidthM != null && (
+          <Detail label="Approx width" value={`${selectedPlot.approxWidthM} m`} />
+        )}
+        {selectedPlot.approxDepthM != null && (
+          <Detail label="Approx depth" value={`${selectedPlot.approxDepthM} m`} />
+        )}
       </div>
 
       {parcel.properties.isManual && (
@@ -98,6 +118,24 @@ export function SelectedPlotPanel({
           zoning, setbacks, easements, slope, estate rules and approvals.
         </p>
       </div>
+
+      {onPlaceDesign && (
+        <div className="mt-5">
+          <DesignResultsPanel
+            selectedPlot={selectedPlot}
+            onPlaceDesign={onPlaceDesign}
+          />
+        </div>
+      )}
+
+      {floorPlanOverlay && floorPlanOverlay.designId && activeDesignMatch && (
+        <div className="mt-4">
+          <DesignPlacementSummary
+            match={activeDesignMatch}
+            placement={floorPlanOverlay}
+          />
+        </div>
+      )}
 
       <div className="mt-5 grid gap-3">
         <Button>

@@ -7,6 +7,7 @@ import { AccessGate } from "@/components/access-gate/AccessGate";
 import { BuilderPlusMapDynamic as BuilderPlusMap } from "@/components/BuilderPlusMapDynamic";
 import { BuilderPlusSidebar, SIDEBAR_WIDTH } from "@/components/BuilderPlusSidebar";
 import { SelectedPlotPanel } from "@/components/SelectedPlotPanel";
+import { createSelectedPlotFromParcel } from "@/lib/plot/plotAnalysis";
 import type {
   FloorPlanOverlayState,
   FloorPlanUploadPayload
@@ -15,6 +16,11 @@ import type { ManualPlotFeature } from "@/types/manualPlot";
 import type { ParcelFeature, ParcelFeatureCollection } from "@/types/parcel";
 import type { SearchResult } from "@/types/search";
 import type { BasemapId } from "@/lib/mapConfig";
+import type { DesignMatch } from "@/types/design";
+
+const DESIGN_PLACEHOLDER_SVG = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="#f0f4f8" rx="8"/><text x="200" y="140" text-anchor="middle" font-family="system-ui" font-size="14" fill="#94a3b8">Floor plan placeholder</text><text x="200" y="170" text-anchor="middle" font-family="system-ui" font-size="12" fill="#cbd5e1">Design overlay at real-world size</text></svg>'
+)}`;
 
 const emptyParcels: ParcelFeatureCollection = {
   type: "FeatureCollection",
@@ -215,6 +221,33 @@ function BuilderPlusApp() {
     });
   }
 
+  function handlePlaceDesign(match: DesignMatch) {
+    if (!selectedParcel) return;
+
+    const selectedPlot = createSelectedPlotFromParcel(selectedParcel);
+
+    setFloorPlanOverlay({
+      imageUrl: match.design.floorPlanImageUrl ?? DESIGN_PLACEHOLDER_SVG,
+      fileName: match.design.name,
+      opacity: 0.72,
+      scale: 1,
+      rotation: 0,
+      offsetX: 0,
+      offsetY: 0,
+      anchorLatLng: {
+        lat: selectedPlot.centroid.lat,
+        lng: selectedPlot.centroid.lng
+      },
+      locked: false,
+      designId: match.design.id,
+      widthM: match.design.widthM ?? null,
+      depthM: match.design.depthM ?? null,
+      floorAreaSqm: match.design.floorAreaSqm ?? null,
+      placementMode: "real_size_design",
+      scaleAdjustment: 1
+    });
+  }
+
   function resetFloorPlanOverlay() {
     setFloorPlanOverlay((current) =>
       current
@@ -224,7 +257,8 @@ function BuilderPlusApp() {
             scale: 1,
             rotation: 0,
             offsetX: 0,
-            offsetY: 0
+            offsetY: 0,
+            scaleAdjustment: 1
           }
         : null
     );
@@ -341,6 +375,8 @@ function BuilderPlusApp() {
             key={selectedParcel.properties.id}
             parcel={selectedParcel}
             onClear={clearSelectedParcel}
+            onPlaceDesign={handlePlaceDesign}
+            floorPlanOverlay={floorPlanOverlay}
           />
         )}
       </AnimatePresence>

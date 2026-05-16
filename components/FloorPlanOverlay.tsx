@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
+import { computePxPerMetre } from "@/lib/plot/plotAnalysis";
 import type { FloorPlanOverlayState } from "@/types/floorPlan";
+
+const UPLOADED_IMAGE_SIZE = 280;
 
 export function FloorPlanOverlay({
   overlay,
@@ -21,25 +24,49 @@ export function FloorPlanOverlay({
     offsetY: number;
   } | null>(null);
   const [anchorPoint, setAnchorPoint] = useState<L.Point | null>(null);
+  const [pxPerM, setPxPerM] = useState<number>(1);
 
   useEffect(() => {
-    const updateAnchorPoint = () => {
+    const anchor = overlay.anchorLatLng;
+    const updateView = () => {
       setAnchorPoint(
         map.latLngToContainerPoint([
-          overlay.anchorLatLng.lat,
-          overlay.anchorLatLng.lng
+          anchor.lat,
+          anchor.lng
         ])
       );
+      if (overlay.placementMode === "real_size_design") {
+        setPxPerM(computePxPerMetre(map, anchor));
+      }
     };
 
-    updateAnchorPoint();
-    map.on("move zoom resize", updateAnchorPoint);
+    updateView();
+    map.on("move zoom resize", updateView);
     return () => {
-      map.off("move zoom resize", updateAnchorPoint);
+      map.off("move zoom resize", updateView);
     };
-  }, [map, overlay.anchorLatLng.lat, overlay.anchorLatLng.lng]);
+  }, [map, overlay.anchorLatLng, overlay.placementMode]);
 
   if (!anchorPoint) return null;
+
+  const isRealSize = overlay.placementMode === "real_size_design";
+  const scaleAdjustment = overlay.scaleAdjustment ?? 1;
+
+  let imageWidth: number;
+  let imageHeight: number;
+  let transformScale: number;
+
+  if (isRealSize && overlay.widthM && overlay.depthM) {
+    imageWidth = Math.round(overlay.widthM * pxPerM * scaleAdjustment);
+    imageHeight = Math.round(overlay.depthM * pxPerM * scaleAdjustment);
+    transformScale = overlay.scale;
+  } else {
+    imageWidth = UPLOADED_IMAGE_SIZE;
+    imageHeight = 0;
+    transformScale = overlay.scale;
+  }
+
+  const effectiveRotation = overlay.rotation ?? 0;
 
   return (
     <div
@@ -47,7 +74,7 @@ export function FloorPlanOverlay({
       style={{
         left: anchorPoint.x,
         top: anchorPoint.y,
-        transform: `translate(-50%, -50%) translate(${overlay.offsetX}px, ${overlay.offsetY}px) rotate(${overlay.rotation}deg) scale(${overlay.scale})`,
+        transform: `translate(-50%, -50%) translate(${overlay.offsetX}px, ${overlay.offsetY}px) rotate(${effectiveRotation}deg) scale(${transformScale})`,
         transformOrigin: "center"
       }}
     >
@@ -95,7 +122,8 @@ export function FloorPlanOverlay({
         }}
         className="max-w-none select-none rounded-md border border-sky-200/35 bg-white shadow-[0_20px_55px_rgba(0,0,0,0.45)]"
         style={{
-          width: 280,
+          width: isRealSize && imageWidth > 0 ? imageWidth : UPLOADED_IMAGE_SIZE,
+          ...(isRealSize && imageHeight > 0 ? { height: imageHeight } : {}),
           opacity: overlay.opacity,
           cursor: overlay.locked ? "default" : "grab",
           pointerEvents: overlay.locked ? "none" : "auto"
