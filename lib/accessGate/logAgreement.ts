@@ -1,51 +1,124 @@
-import type { AccessGateAgreementPayload } from "@/types/accessGate";
+import type { CloudflareEnv, D1Database } from "./cloudflareEnv";
+import type {
+  AccessAgreementPayload,
+  AgreementLogStorage,
+} from "@/types/accessGate";
 
 /**
- * Agreement logging abstraction.
+ * Reusable access agreement logging.
  *
- * For now: console.log fallback when no persistent storage is configured.
+ * Inserts into Cloudflare D1 when the DB binding is available.
+ * Falls back to console.log when DB is missing.
  *
- * TODO: Plug in Cloudflare D1 for production persistence:
- *   if (env.D1_DATABASE) { await env.D1_DATABASE.prepare(...).run() }
- *
- * TODO: Plug in Supabase for production persistence:
- *   if (env.SUPABASE_URL) { await supabase.from('agreement_logs').insert(...) }
- *
- * TODO: Plug in Cloudflare KV for production persistence:
- *   if (env.KV_NAMESPACE) { await env.KV_NAMESPACE.put(key, value) }
- *
- * TODO: Plug in R2 for production persistence:
- *   if (env.R2_BUCKET) { await env.R2_BUCKET.put(key, body) }
+ * This is NOT enterprise-grade audit logging.
+ * For production, consider signed tokens, database-backed audit, and rate limiting.
  *
  * Do not block access if logging fails.
+ * Never store or log raw passwords.
  */
 
-export interface AgreementLogResult {
-  logged: boolean;
-  backend: string;
+interface LogAgreementInput {
+  payload: AccessAgreementPayload;
+  request: Request;
+  env?: CloudflareEnv;
 }
 
-export async function logAgreement(
-  payload: AccessGateAgreementPayload,
-  meta: {
-    userAgent: string;
-    ip: string | null;
-    country: string | null;
-    serverTimestamp: string;
-    projectId: string;
+interface LogAgreementResult {
+  ok: boolean;
+  logged: boolean;
+  storage: AgreementLogStorage;
+  error?: string;
+}
+
+function extractRequestMeta(request: Request) {
+  const headers = request.headers;
+  const userAgent = headers.get("user-agent") ?? undefined;
+  const ip =
+    headers.get("cf-connecting-ip") ??
+    headers.get("x-forwarded-for") ??
+    headers.get("x-real-ip") ??
+    undefined;
+  const country = headers.get("cf-ipcountry") ?? undefined;
+  return { userAgent, ip, country };
+}
+
+async function insertIntoD1(
+  db: D1Database,
+  entry: {
+    name: string | undefined;
+    company: string | undefined;
+    email: string | undefined;
+    clientName: string;
+    passwordLabel: string;
+    termsVersion: string;
+    ipAddress: string | undefined;
+    country: string | undefined;
+    userAgent: string | undefined;
   }
-): Promise<AgreementLogResult> {
-  const logEntry = {
-    ...payload,
-    ...meta,
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO access_agreements
+        (name, company, email, client_name, password_label, terms_version, accepted, ip_address, country, user_agent)
+       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`
+    )
+    .bind(
+      entry.name ?? null,
+      entry.company ?? null,
+      entry.email ?? null,
+      entry.clientName,
+      entry.passwordLabel,
+      entry.termsVersion,
+      entry.ipAddress ?? null,
+      entry.country ?? null,
+      entry.userAgent ?? null
+    )
+    .run();
+}
+
+export async function logAccessAgreement(
+  input: LogAgreementInput
+): Promise<LogAgreementResult> {
+  const { payload, request, env } = input;
+  const meta = extractRequestMeta(request);
+
+  const entry = {
+    name: payload.name,
+    company: payload.company,
+    email: payload.email,
+    clientName: payload.clientName,
+    passwordLabel: payload.passwordLabel,
+    termsVersion: payload.termsVersion,
+    ipAddress: meta.ip,
+    country: meta.country,
+    userAgent: meta.userAgent,
   };
 
-  // TODO: Replace console.log with D1/Supabase/KV/R2 in production.
-  // Production agreement storage requires D1 or Supabase.
-  console.log("[AccessGate] Agreement logged:", JSON.stringify(logEntry, null, 2));
+  if (env?.DB) {
+    try {
+      await insertIntoD1(env.DB, entry);
+      return { ok: true, logged: true, storage: "d1" };
+    } catch (err) {
+      console.error(
+        "[AccessGate] D1 insert failed:",
+        err instanceof Error ? err.message : err
+      );
+      console.log(
+        "[AccessGate] Agreement (D1 failed, logging to console):",
+        JSON.stringify(entry, null, 2)
+      );
+      return {
+        ok: true,
+        logged: false,
+        storage: "d1-error",
+        error: err instanceof Error ? err.message : "D1 insert failed",
+      };
+    }
+  }
 
-  return {
-    logged: true,
-    backend: "console-fallback",
-  };
+  console.log(
+    "[AccessGate] Agreement (no DB binding, console fallback):",
+    JSON.stringify(entry, null, 2)
+  );
+  return { ok: true, logged: false, storage: "console-fallback" };
 }

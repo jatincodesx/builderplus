@@ -125,6 +125,10 @@ export function AccessGate({ children }: AccessGateProps) {
         return;
       }
 
+      if (process.env.NODE_ENV !== "production" && data.storage) {
+        console.log("[AccessGate] Agreement storage:", data.storage);
+      }
+
       const session: AccessGateSessionState = {
         verified: true,
         termsAccepted: true,

@@ -128,3 +128,57 @@ This MVP implements the plot search/select foundation, basemap switching,
 approximate image overlays and a manual four-point plot fallback. Zoning checks,
 setbacks, surveyed placement, saved projects and enquiry flows are intentionally
 out of scope for this iteration.
+
+## Access agreement logging with Cloudflare D1
+
+Every time a user verifies the demo password and accepts the access terms, the
+agreement is logged. When the Cloudflare D1 binding is available the log is
+persisted to a D1 table; otherwise it falls back to server-side console output.
+
+### Setup
+
+1. Create a D1 database:
+
+   ```bash
+   wrangler d1 create builderplus_access_logs
+   ```
+
+2. Bind it to your Cloudflare Pages project with binding name **DB**:
+
+   - Go to your Cloudflare Pages project → Settings → Functions → D1 database bindings
+   - Variable name: `DB`
+   - D1 database: `builderplus_access_logs`
+
+3. Run the migration SQL against your D1 database:
+
+   ```bash
+   wrangler d1 execute builderplus_access_logs --file=./migrations/001_access_agreements.sql
+   ```
+
+   Or paste the SQL from `migrations/001_access_agreements.sql` into the D1 console.
+
+4. Add the required environment variables (see `.env.example`):
+
+   ```bash
+   DEMO_ACCESS_ENABLED=true
+   DEMO_ACCESS_PASSWORD_HASH=<sha-256-hash-of-your-password>
+   NEXT_PUBLIC_DEMO_ACCESS_PASSWORD_LABEL=brickbrick-demo-001
+   NEXT_PUBLIC_DEMO_ACCESS_CLIENT_NAME=BrickBrick
+   NEXT_PUBLIC_DEMO_ACCESS_TERMS_VERSION=2026-05-15-v1
+   ```
+
+5. Redeploy Cloudflare Pages.
+
+6. Test agreement logging by accepting the access gate.
+
+7. View rows in the D1 console or via:
+
+   ```bash
+   wrangler d1 execute builderplus_access_logs --command="SELECT * FROM access_agreements ORDER BY created_at DESC LIMIT 10"
+   ```
+
+### Fallback behaviour
+
+- If the `DB` binding is missing, the API returns `{ ok: true, logged: false, storage: "console-fallback" }` and logs the agreement to the server console.
+- If the D1 insert fails, the API returns `{ ok: true, logged: false, storage: "d1-error" }` and logs the error. Access is never blocked by a logging failure.
+- In development (`NODE_ENV !== "production"`), the client console also shows the storage status.

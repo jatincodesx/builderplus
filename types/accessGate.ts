@@ -39,6 +39,7 @@ export interface AccessGateAgreementPayload {
 export interface AccessGateAgreementResponse {
   ok: boolean;
   logged: boolean;
+  storage?: "d1" | "console-fallback" | "d1-error";
   error?: string;
 }
 
@@ -50,3 +51,22 @@ export interface AccessGateSessionState {
 }
 
 export type AccessGateStep = "password" | "terms" | "unlocked";
+
+export type AccessAgreementPayload = {
+  name?: string;
+  company?: string;
+  email?: string;
+  accepted: boolean;
+  termsVersion: string;
+  clientName: string;
+  passwordLabel: string;
+};
+
+export type AccessAgreementLog = AccessAgreementPayload & {
+  ipAddress?: string;
+  country?: string;
+  userAgent?: string;
+  createdAt?: string;
+};
+
+export type AgreementLogStorage = "d1" | "console-fallback" | "d1-error";
