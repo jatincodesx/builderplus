@@ -40,6 +40,7 @@ function BuilderPlusApp() {
   const [activeBasemap, setActiveBasemap] = useState<BasemapId>("map");
   const [autoSatellite, setAutoSatellite] = useState(true);
   const [manualBasemapOverride, setManualBasemapOverride] = useState(false);
+  const [placedDesignMatch, setPlacedDesignMatch] = useState<DesignMatch | null>(null);
   const floorPlanOverlayRef = useRef<FloorPlanOverlayState | null>(null);
 
   useEffect(() => {
@@ -226,6 +227,7 @@ function BuilderPlusApp() {
 
     const selectedPlot = createSelectedPlotFromParcel(selectedParcel);
 
+    setPlacedDesignMatch(match);
     setFloorPlanOverlay({
       imageUrl: match.design.floorPlanImageUrl ?? DESIGN_PLACEHOLDER_SVG,
       fileName: match.design.name,
@@ -269,6 +271,7 @@ function BuilderPlusApp() {
       revokeFloorPlanImage(current);
       return null;
     });
+    setPlacedDesignMatch(null);
   }
 
   function fitFloorPlanToPlot() {
@@ -377,6 +380,7 @@ function BuilderPlusApp() {
             onClear={clearSelectedParcel}
             onPlaceDesign={handlePlaceDesign}
             floorPlanOverlay={floorPlanOverlay}
+            placedDesignMatch={placedDesignMatch}
           />
         )}
       </AnimatePresence>
