@@ -13,52 +13,12 @@ export const runtime = "edge";
 
 import { NextRequest, NextResponse } from "next/server";
 import { logAccessAgreement } from "@/lib/accessGate/logAgreement";
+import { getD1Binding } from "@/lib/accessGate/getRuntimeEnv";
 import type {
   AccessGateAgreementPayload,
   AccessGateAgreementResponse,
 } from "@/types/accessGate";
 import type { CloudflareEnv } from "@/lib/accessGate/cloudflareEnv";
-
-/**
- * Access Cloudflare D1 binding from the Next.js edge runtime.
- *
- * On Cloudflare Pages with OpenNext/next-on-pages, bindings are available
- * via process.env or through the global cf object. This helper attempts
- * both patterns and falls back gracefully.
- *
- * To use D1 in production:
- * 1. Create a D1 database: wrangler d1 create builderplus_access_logs
- * 2. Bind it to your Cloudflare Pages project with binding name: DB
- * 3. Run the migration SQL from migrations/001_access_agreements.sql
- */
-function getCloudflareEnv(): CloudflareEnv {
-  try {
-    // Pattern 1: OpenNext/next-on-pages exposes bindings via process.env
-    // The binding name "DB" is set in the Cloudflare Pages dashboard
-    type ProcessEnvWithBindings = typeof process.env & Record<string, unknown>;
-    const db = (process.env as ProcessEnvWithBindings).DB;
-    if (db && typeof db === "object" && "prepare" in (db as object)) {
-      return { DB: db as CloudflareEnv["DB"] };
-    }
-  } catch {
-    // Binding not available via process.env
-  }
-
-  try {
-    // Pattern 2: Access via globalThis for Cloudflare Workers runtime
-    type GlobalWithCf = typeof globalThis & {
-      cf?: { env?: CloudflareEnv };
-    };
-    const cfEnv = (globalThis as GlobalWithCf).cf?.env;
-    if (cfEnv?.DB) {
-      return { DB: cfEnv.DB };
-    }
-  } catch {
-    // Binding not available via globalThis
-  }
-
-  return {};
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -92,7 +52,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const env = getCloudflareEnv();
+    const dbBinding = await getD1Binding();
+    const env: CloudflareEnv = dbBinding
+      ? { DB: dbBinding as CloudflareEnv["DB"] }
+      : {};
 
     const result = await logAccessAgreement({
       payload: {

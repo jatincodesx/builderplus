@@ -10,6 +10,7 @@ export const runtime = "edge";
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPassword } from "@/lib/accessGate/hash";
+import { getRuntimeEnvValue } from "@/lib/accessGate/getRuntimeEnv";
 import type { AccessGateVerifyResponse } from "@/types/accessGate";
 
 export async function POST(request: NextRequest) {
@@ -23,22 +24,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const storedHash = process.env.DEMO_ACCESS_PASSWORD_HASH;
-    const devFallback =
-      process.env.NODE_ENV !== "production"
-        ? process.env.DEMO_ACCESS_DEV_PASSWORD
-        : undefined;
+    const hashResult = await getRuntimeEnvValue("DEMO_ACCESS_PASSWORD_HASH");
+    const storedHash = hashResult.value || undefined;
+
+    let devFallback: string | undefined;
+    if (process.env.NODE_ENV !== "production") {
+      const devResult = await getRuntimeEnvValue("DEMO_ACCESS_DEV_PASSWORD");
+      devFallback = devResult.value || undefined;
+    }
 
     const valid = await verifyPassword(body.password, storedHash, devFallback);
 
     if (!valid) {
+      const isDev = process.env.NODE_ENV !== "production";
       return NextResponse.json<AccessGateVerifyResponse>(
-        { ok: false, error: "Invalid password." },
+        {
+          ok: false,
+          error: "Invalid password.",
+          ...(isDev
+            ? { hasPasswordHash: !!storedHash, source: hashResult.source }
+            : {}),
+        },
         { status: 401 }
       );
     }
 
-    return NextResponse.json<AccessGateVerifyResponse>({ ok: true });
+    const isDev = process.env.NODE_ENV !== "production";
+    return NextResponse.json<AccessGateVerifyResponse>({
+      ok: true,
+      ...(isDev
+        ? { hasPasswordHash: !!storedHash, source: hashResult.source }
+        : {}),
+    });
   } catch {
     return NextResponse.json<AccessGateVerifyResponse>(
       { ok: false, error: "Verification failed." },

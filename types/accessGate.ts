@@ -23,6 +23,8 @@ export interface AccessGateVerifyPayload {
 export interface AccessGateVerifyResponse {
   ok: boolean;
   error?: string;
+  hasPasswordHash?: boolean;
+  source?: "cloudflare-env" | "process-env" | "fallback";
 }
 
 export interface AccessGateAgreementPayload {
